@@ -26,7 +26,7 @@ class CustomUser(AbstractUser, BaseModel):
     on_news = models.BooleanField(_('on newsletter'), default = False)
     password_last_changed = models.DateTimeField(_('password last changed'), null = True)
 
-    one_time_password = models.CharField(_('One time password'), null = True)
+    one_time_password = models.CharField(_('One time password'), null = True, max_length = 6)
     one_time_sent_at = models.DateTimeField(_('One time sent at'), null = True)
     email_verification_token = models.CharField(_('email token'), null = True, max_length =255)
     email_token_sent_at = models.DateTimeField(_('token sent at'), null = True)

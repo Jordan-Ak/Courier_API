@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 import os
-import timedelta
+from datetime import timedelta
 from pathlib import Path
 from environs import Env
 
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
 
     #Third party apps
     'rest_framework',
-    'drf-yasg',
+    'drf_yasg',
     'phonenumber_field',
     
     #My apps
