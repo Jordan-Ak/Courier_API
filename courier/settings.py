@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 import os
+import timedelta
 from pathlib import Path
 from environs import Env
 
@@ -46,8 +47,10 @@ INSTALLED_APPS = [
     #Third party apps
     'rest_framework',
     'drf-yasg',
+    'phonenumber_field',
     
     #My apps
+    'accounts',
     
 ]
 
@@ -88,7 +91,7 @@ WSGI_APPLICATION = 'courier.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', #Remember to install psycopg2 (pip install psycopg2)
-        'NAME': 'AUTH2', #This name has to be the exact name as the database you setup in pgadmin 4
+        'NAME': 'courier', #This name has to be the exact name as the database you setup in pgadmin 4
         'USER': env.str('USER'),#Default username for postgresql after install postgresql
         'PASSWORD': env.str('PASSWORD'),#Remember the password you used during installation.
         'HOST': '127.0.0.1', #Host server as the name says.
@@ -116,6 +119,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+#Phone settings
+PHONENUMBER_DB_FORMAT = 'INTERNATIONAL'
+PHONENUMBER_DEFAULT_REGION = 'NG'
+
+#JWT config
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
+    'UPDATE_LAST_LOGIN': True,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
@@ -140,3 +154,14 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    )
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' #Sending emails to the console
