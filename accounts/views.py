@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.views import Response
 from rest_framework import status
-from accounts.serializers import UserCreateSerializer
-from accounts.services import user_create
+from rest_framework import permissions
+
+from accounts.serializers import UserCreateSerializer, UserDeleteSerializer, UserRetrieveSerializer, UserUpdateSerializer
+from accounts.services import user_create, user_delete, user_retrieve_em, user_update, user_retrieve_pk
 # Create your views here.
 
 
@@ -13,8 +15,58 @@ class UserCreateView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception = True)
+        
         data = serializer.validated_data
         user_create(data['email'], data['first_name'],data['last_name'],data['phone_no'], data['password'])
         return Response({'message':'User Created Successfully, verify your email'},
                             status= status.HTTP_201_CREATED)
 
+
+class UserRetrieveView(APIView):
+    serializer_class = UserRetrieveSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.serializer_class(request.user)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class UserUpdateView(APIView):
+    serializer_class = UserUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.serializer_class(request.user)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial',False)
+        serializer = self.serializer_class(data = request.data, instance = request.user,
+                                                                         partial = partial)
+        serializer.is_valid(raise_exception=True)
+        user = user_retrieve_pk(request.user.id)
+        user_update(user,**serializer.validated_data)
+
+        return Response({'message':'User Detail Updated'},
+                            status= status.HTTP_200_OK)
+    
+    def patch(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data = request.data, instance = request.user,
+                                                                         partial = True)
+        serializer.is_valid(raise_exception=True)
+        user = user_retrieve_pk(request.user.id)
+        user_update(user,**serializer.validated_data)
+        return Response({'message':'User Detail Updated'},
+                            status= status.HTTP_200_OK)
+
+class UserDeleteView(APIView):
+    serializer_class = UserDeleteSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = user_retrieve_em(kwargs['email'])
+        user_delete(user)
+        return Response({'message':'Account Deleted'},
+                            status= status.HTTP_200_OK)
+
+
+
+    

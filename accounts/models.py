@@ -19,8 +19,8 @@ class CustomUser(AbstractUser, BaseModel):
     username = None
     date_joined = None
     email = models.EmailField(_('email address'), blank=False, unique = True)
-    first_name = models.CharField(_('first name'), max_length=150, blank=False)
-    last_name = models.CharField(_('last name'), max_length=150, blank=False)
+    first_name = models.CharField(_('first name'), max_length=150, blank=False, null = True)
+    last_name = models.CharField(_('last name'), max_length=150, blank=False, null = True)
     phone_no = PhoneNumberField(_('phone number'),unique = True,)
     
     is_verified_email = models.BooleanField(_('is verified email'), default = False)

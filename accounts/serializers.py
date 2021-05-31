@@ -30,3 +30,20 @@ class UserCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError(_('Passwords do not match'))
         
         return attrs
+
+class UserRetrieveSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = ('email', 'first_name', 'last_name', 'phone_no','is_verified_email', 'on_news')
+
+class UserUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    on_news = serializers.BooleanField()
+
+
+class UserDeleteSerializer(serializers.Serializer):
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    on_news = serializers.BooleanField()
