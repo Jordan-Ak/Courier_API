@@ -9,8 +9,9 @@ from django.contrib.auth import get_user_model
 
 from accounts.serializers import (UserAdminDetailSerializer, UserAdminListSerializer, 
                                 UserCreateSerializer, UserDeleteSerializer, 
+                                UserPasswordChangeSerializer, 
                                 UserRetrieveSerializer, UserUpdateSerializer)
-from accounts.services import (user_create, user_delete, user_retrieve_em, 
+from accounts.services import (password_change, user_create, user_delete, user_retrieve_em, 
                             user_update, user_retrieve_pk, 
                             user_email_verification_confirm,user_email_verification_flow)
 # Create your views here.
@@ -105,3 +106,15 @@ class UserResendEmailVerificationView(APIView):
         user_email_verification_flow(user)
 
         return Response({'message':'Email Confirmation has been sent'})
+
+class UserPasswordChangeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserPasswordChangeSerializer
+    
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        password_change(user,**serializer.validated_data)
+        return Response({'message':'Password Changed Successfully'}, status= status.HTTP_200_OK)
+        

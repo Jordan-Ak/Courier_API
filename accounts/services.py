@@ -6,6 +6,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 
 
 def validate_password(password) -> str:
@@ -78,6 +79,15 @@ def user_update(instance, **validated_data):
 
     instance.save()
     return instance
+
+def password_change(user, **serializer_data):
+    if not user.check_password(serializer_data['old_password']):
+        raise serializers.ValidationError(_('Old password is incorrect.'))
+    
+    user.set_password(serializer_data['password'])
+    user.password_last_changed = timezone.now()
+    user.save()
+
 
 def user_delete(instance)-> None:
     instance.delete()

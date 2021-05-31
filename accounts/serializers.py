@@ -59,3 +59,14 @@ class UserAdminDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = '__all__'
+
+class UserPasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField()
+    password = serializers.CharField(validators = [validate_password])
+    password2 = serializers.CharField()
+
+    def validate(self, attrs) -> str:
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError(_('Passwords do not match'))
+        
+        return attrs
