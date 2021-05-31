@@ -2,8 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.views import Response
 from rest_framework import status
 from rest_framework import permissions
+from rest_framework import generics
 
-from accounts.serializers import UserCreateSerializer, UserDeleteSerializer, UserRetrieveSerializer, UserUpdateSerializer
+from django.contrib.auth import get_user_model
+
+from accounts.serializers import UserAdminDetailSerializer, UserAdminListSerializer, UserCreateSerializer, UserDeleteSerializer, UserRetrieveSerializer, UserUpdateSerializer
 from accounts.services import user_create, user_delete, user_retrieve_em, user_update, user_retrieve_pk
 # Create your views here.
 
@@ -68,5 +71,15 @@ class UserDeleteView(APIView):
                             status= status.HTTP_200_OK)
 
 
+class UserAdminListView(generics.ListAPIView):
+    serializer_class = UserAdminListSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = get_user_model().objects.all()
+
+class UserAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = UserAdminDetailSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = get_user_model().objects.all()
+    lookup_url_kwarg = 'id'
 
     

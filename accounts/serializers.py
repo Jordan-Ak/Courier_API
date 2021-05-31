@@ -47,3 +47,15 @@ class UserDeleteSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     on_news = serializers.BooleanField()
+
+class UserAdminListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'email','first_name','last_name','phone_no','is_verified_email','on_news')
+
+class UserAdminDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = '__all__'
