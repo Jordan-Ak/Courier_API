@@ -3,11 +3,12 @@ from rest_framework.views import Response
 from rest_framework import status
 from rest_framework import permissions
 from rest_framework import generics
+from rest_framework.generics import get_object_or_404
 
 from django.contrib.auth import get_user_model
 
 from accounts.serializers import UserAdminDetailSerializer, UserAdminListSerializer, UserCreateSerializer, UserDeleteSerializer, UserRetrieveSerializer, UserUpdateSerializer
-from accounts.services import user_create, user_delete, user_retrieve_em, user_update, user_retrieve_pk
+from accounts.services import user_create, user_delete, user_retrieve_em, user_update, user_retrieve_pk, user_email_verification_confirm
 # Create your views here.
 
 
@@ -82,4 +83,11 @@ class UserAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = get_user_model().objects.all()
     lookup_url_kwarg = 'id'
 
+class UserEmailVerificationConfirmView(APIView):
     
+    def post(self, request, *args, **kwargs):
+        user = get_object_or_404(get_user_model().objects.all(),
+                                email_verification_token = kwargs['email_verification_token'])
+        user_email_verification_confirm(user)
+        
+        return Response({'message':'Your email is now verified'}, status = status.HTTP_200_OK)

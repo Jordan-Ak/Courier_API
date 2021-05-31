@@ -4,6 +4,7 @@ from rest_framework.views import Response
 from rest_framework import status
 
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -21,6 +22,20 @@ def validate_password(password) -> str:
 
     return password
 
+
+
+def user_email_verification_flow(user) -> None:
+    user.generate_email_verification_token()
+    mail_message = 'This is your email verification link'
+    send_mail(
+        'Email Verification at Courier Services',
+         f'{mail_message}  http://127.0.0.1:8000/accounts/verify_mail/{user.email_verification_token}',
+        'from admin@email.com',
+        [f'{user.email}'],
+        fail_silently = False,)
+
+
+
 def user_create(email, first_name, last_name, phone_no, password) -> get_user_model:
     user: get_user_model = get_user_model().objects.create(email=email, first_name = first_name,
                                     last_name = last_name, phone_no = phone_no)
@@ -28,7 +43,20 @@ def user_create(email, first_name, last_name, phone_no, password) -> get_user_mo
     user.set_password(password)
 
     user.save()
+    user_email_verification_flow(user)
     return user
+
+def user_email_verification_confirm(user):
+    if user.has_email_verification_token_expired():
+        raise serializers.ValidationError(_('Resend email verification this token has expired'))
+    
+    elif user.is_verified_email:
+        raise serializers.ValidationError(_('User is already verified'))
+   
+    else:
+        user.confirm_email()
+
+
 
 def user_retrieve_pk(id) -> get_user_model:
     user = get_object_or_404(get_user_model(),id = id)

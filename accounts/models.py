@@ -45,7 +45,7 @@ class CustomUser(AbstractUser, BaseModel):
         return timezone.now() > self.one_time_sent_at + timedelta(hours = 0.2)
     
     def generate_token(self) -> str:
-        token = secrets.urlsafe(50)
+        token = secrets.token_urlsafe(50)
         return token
 
     def generate_email_verification_token(self) -> None:
