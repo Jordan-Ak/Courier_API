@@ -7,8 +7,12 @@ from rest_framework.generics import get_object_or_404
 
 from django.contrib.auth import get_user_model
 
-from accounts.serializers import UserAdminDetailSerializer, UserAdminListSerializer, UserCreateSerializer, UserDeleteSerializer, UserRetrieveSerializer, UserUpdateSerializer
-from accounts.services import user_create, user_delete, user_retrieve_em, user_update, user_retrieve_pk, user_email_verification_confirm
+from accounts.serializers import (UserAdminDetailSerializer, UserAdminListSerializer, 
+                                UserCreateSerializer, UserDeleteSerializer, 
+                                UserRetrieveSerializer, UserUpdateSerializer)
+from accounts.services import (user_create, user_delete, user_retrieve_em, 
+                            user_update, user_retrieve_pk, 
+                            user_email_verification_confirm,user_email_verification_flow)
 # Create your views here.
 
 
@@ -91,3 +95,13 @@ class UserEmailVerificationConfirmView(APIView):
         user_email_verification_confirm(user)
         
         return Response({'message':'Your email is now verified'}, status = status.HTTP_200_OK)
+
+
+class UserResendEmailVerificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+#This view has minimal business logic within
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        user_email_verification_flow(user)
+
+        return Response({'message':'Email Confirmation has been sent'})

@@ -25,6 +25,9 @@ def validate_password(password) -> str:
 
 
 def user_email_verification_flow(user) -> None:
+    if user.is_verified_email:
+        raise serializers.ValidationError(_('Your email is already verified'))
+    
     user.generate_email_verification_token()
     mail_message = 'This is your email verification link'
     send_mail(

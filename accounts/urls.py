@@ -1,5 +1,5 @@
 from django.urls import path
-from accounts.views import UserAdminDetailView, UserAdminListView, UserCreateView, UserDeleteView, UserEmailVerificationConfirmView, UserRetrieveView, UserUpdateView
+from accounts.views import UserAdminDetailView, UserAdminListView, UserCreateView, UserDeleteView, UserEmailVerificationConfirmView, UserResendEmailVerificationView, UserRetrieveView, UserUpdateView
 
 
 urlpatterns = [
@@ -10,5 +10,6 @@ urlpatterns = [
     path('list/', UserAdminListView.as_view(), name = 'user-list'),
     path('detail/<str:id>/', UserAdminDetailView.as_view(), name = 'user-detail'),
     path('verify_mail/<str:email_verification_token>/',
-                            UserEmailVerificationConfirmView.as_view(), name = 'email-confirm')
+                            UserEmailVerificationConfirmView.as_view(), name = 'email-confirm'),
+    path('resend_mail/', UserResendEmailVerificationView.as_view(), name = 'resend-email'),
 ]
