@@ -43,10 +43,10 @@ class UserUpdateSerializer(serializers.Serializer):
     on_news = serializers.BooleanField()
 
 
-class UserDeleteSerializer(serializers.Serializer):
-    first_name = serializers.CharField()
-    last_name = serializers.CharField()
-    on_news = serializers.BooleanField()
+#class UserDeleteSerializer(serializers.Serializer):
+ #   first_name = serializers.CharField()
+ #   last_name = serializers.CharField()
+  #  on_news = serializers.BooleanField()
 
 class UserAdminListSerializer(serializers.ModelSerializer):
 
