@@ -1,3 +1,4 @@
+from accounts.tasks import user_email_verification_flow_sh, user_password_reset_send_sh
 from rest_framework.views import APIView
 from rest_framework.views import Response
 from rest_framework import status
@@ -14,11 +15,11 @@ from accounts.serializers import (UserAdminDetailSerializer, UserAdminListSerial
                                 UserPasswordResetConfirmSerializer, UserPasswordResetSerializer, 
                                 UserRetrieveSerializer, UserUpdateSerializer)
 
-from accounts.services import (user_password_change, user_create, user_delete, user_password_reset_change,
+from accounts.services import (user_email_verified_check, user_password_change, user_create, user_delete, user_password_reset_change,
                             user_password_reset_send, user_password_reset_validation, user_retrieve_em, 
                             user_retrieve_pass_tk, 
                             user_update, user_retrieve_pk, 
-                            user_email_verification_confirm,user_email_verification_flow)
+                            user_email_verification_confirm)
 # Create your views here.
 
 
@@ -139,7 +140,9 @@ class UserResendEmailVerificationView(APIView):
                         responses={'200': 'User email verification sent succesfully'})
     def post(self, request, *args, **kwargs):
         user = request.user
-        user_email_verification_flow(user)
+        user_email_verified_check(user)
+        user.generate_email_verification_token()
+        user_email_verification_flow_sh.delay(user.email, user.email_verification_token)
 
         return Response({'message':'Email Confirmation has been sent'})
 
@@ -170,7 +173,9 @@ class UserPasswordResetView(APIView):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception=True)
         user = user_retrieve_em(serializer.validated_data['email'])
-        user_password_reset_send(user)
+       
+        user.generate_password_verification_token()
+        user_password_reset_send_sh.delay(user.email, user.password_reset_token)
         return Response({'message':'Password Reset sent successfully'}, status = status.HTTP_200_OK)
 
 class UserPasswordResetConfirmView(APIView):

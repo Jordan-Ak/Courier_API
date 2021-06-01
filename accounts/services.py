@@ -1,3 +1,4 @@
+from accounts.tasks import user_email_verification_flow_sh
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.views import Response
@@ -24,18 +25,17 @@ def validate_password(password) -> str:
     return password
 
 
-
-def user_email_verification_flow(user) -> None:
+def user_email_verified_check(user) -> None:
     if user.is_verified_email:
         raise serializers.ValidationError(_('Your email is already verified'))
-    
-    user.generate_email_verification_token()
+
+def user_email_verification_flow(user_email, user_token) -> None:    
     mail_message = 'This is your email verification link'
     send_mail(
         'Email Verification at Courier Services',
-         f'{mail_message}  http://127.0.0.1:8000/accounts/verify_mail/{user.email_verification_token}',
+         f'{mail_message}  http://127.0.0.1:8000/accounts/verify_mail/{user_token}',
         'from admin@email.com',
-        [f'{user.email}'],
+        [f'{user_email}'],
         fail_silently = False,)
 
 
@@ -47,7 +47,9 @@ def user_create(email, first_name, last_name, phone_no, password) -> get_user_mo
     user.set_password(password)
 
     user.save()
-    user_email_verification_flow(user)
+    
+    user.generate_email_verification_token()
+    user_email_verification_flow_sh.delay(user.email, user.email_verification_token)
     return user
 
 def user_email_verification_confirm(user):
@@ -92,14 +94,13 @@ def user_password_change(user, **serializer_data):
     user.password_last_changed = timezone.now()
     user.save()
 
-def user_password_reset_send(user):
-    user.generate_password_verification_token()
+def user_password_reset_send(user_email, user_token):
     mail_message = 'This is your Password reset link'
     send_mail(
         'Password Reset at Courier Services',
-         f'{mail_message}  http://127.0.0.1:8000/accounts/password/reset/confirm/{user.password_reset_token}',
+         f'{mail_message}  http://127.0.0.1:8000/accounts/password/reset/confirm/{user_token}',
         'from admin@email.com',
-        [f'{user.email}'],
+        [f'{user_email}'],
         fail_silently = False,)
 
 def user_password_reset_validation(user):
