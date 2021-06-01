@@ -72,6 +72,10 @@ def user_retrieve_em(email) -> get_user_model:
     user = get_object_or_404(get_user_model(),email = email)
     return user
 
+def user_retrieve_pass_tk(token) -> get_user_model:
+    user = get_object_or_404(get_user_model(), password_reset_token = token)
+    return user
+
 def user_update(instance, **validated_data):
     instance.first_name = validated_data.get('first_name', instance.first_name)
     instance.last_name = validated_data.get('last_name', instance.last_name)
@@ -80,13 +84,36 @@ def user_update(instance, **validated_data):
     instance.save()
     return instance
 
-def password_change(user, **serializer_data):
+def user_password_change(user, **serializer_data):
     if not user.check_password(serializer_data['old_password']):
         raise serializers.ValidationError(_('Old password is incorrect.'))
     
     user.set_password(serializer_data['password'])
     user.password_last_changed = timezone.now()
     user.save()
+
+def user_password_reset_send(user):
+    user.generate_password_verification_token()
+    mail_message = 'This is your Password reset link'
+    send_mail(
+        'Password Reset at Courier Services',
+         f'{mail_message}  http://127.0.0.1:8000/accounts/password/reset/confirm/{user.password_reset_token}',
+        'from admin@email.com',
+        [f'{user.email}'],
+        fail_silently = False,)
+
+def user_password_reset_validation(user):
+    if user.has_password_reset_token_expired():
+        raise serializers.ValidationError(_('Reset Password again this link has expired'))
+
+def user_password_reset_change(user, new_password):
+    if user.has_password_reset_token_expired():
+        raise serializers.ValidationError(_('Reset Password again this link has expired'))
+    
+    user.confirm_reset()
+    user.set_password(new_password)
+    user.save()
+
 
 
 def user_delete(instance)-> None:

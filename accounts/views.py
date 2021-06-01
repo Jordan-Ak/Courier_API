@@ -10,8 +10,12 @@ from django.contrib.auth import get_user_model
 from accounts.serializers import (UserAdminDetailSerializer, UserAdminListSerializer, 
                                 UserCreateSerializer, UserDeleteSerializer, 
                                 UserPasswordChangeSerializer, 
+                                UserPasswordResetConfirmSerializer, UserPasswordResetSerializer, 
                                 UserRetrieveSerializer, UserUpdateSerializer)
-from accounts.services import (password_change, user_create, user_delete, user_retrieve_em, 
+
+from accounts.services import (user_password_change, user_create, user_delete, user_password_reset_change,
+                            user_password_reset_send, user_password_reset_validation, user_retrieve_em, 
+                            user_retrieve_pass_tk, 
                             user_update, user_retrieve_pk, 
                             user_email_verification_confirm,user_email_verification_flow)
 # Create your views here.
@@ -67,7 +71,7 @@ class UserUpdateView(APIView):
         return Response({'message':'User Detail Updated'},
                             status= status.HTTP_200_OK)
 
-class UserDeleteView(APIView):
+class UserDeleteView(APIView): #Created this view to easily delete users for my convenience while developing
     serializer_class = UserDeleteSerializer
 
     def post(self, request, *args, **kwargs):
@@ -115,6 +119,33 @@ class UserPasswordChangeView(APIView):
         user = request.user
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception = True)
-        password_change(user,**serializer.validated_data)
+        user_password_change(user,**serializer.validated_data)
         return Response({'message':'Password Changed Successfully'}, status= status.HTTP_200_OK)
         
+
+class UserPasswordResetView(APIView):
+    serializer_class = UserPasswordResetSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        user = user_retrieve_em(serializer.validated_data['email'])
+        user_password_reset_send(user)
+        return Response({'message':'Password Reset sent successfully'})
+
+class UserPasswordResetConfirmView(APIView):
+    serializer_class = UserPasswordResetConfirmSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = user_retrieve_pass_tk(kwargs['password_reset_token'])
+        user_password_reset_validation(user)
+        return Response({'message': 'Put in you new password'})
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        user = user_retrieve_pass_tk(kwargs['password_reset_token'])
+        user_password_reset_change(user, serializer.validated_data['new_password'])
+        return Response({'message': 'Password has been changed Successfully'})
+
+

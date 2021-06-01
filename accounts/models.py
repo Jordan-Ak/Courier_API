@@ -56,7 +56,7 @@ class CustomUser(AbstractUser, BaseModel):
     def generate_password_verification_token(self) -> None:
         self.password_reset_token = self.generate_token()
         self.password_reset_sent_at = timezone.now()
-        self.password_last_changed = timezone.now()
+        #self.password_last_changed = timezone.now()
         self.save()
 
 
@@ -70,6 +70,12 @@ class CustomUser(AbstractUser, BaseModel):
         self.email_verification_token = None
         self.email_token_sent_at = None
         self.is_verified_email = True
+        self.save()
+    
+    def confirm_reset(self) -> None:
+        self.password_reset_token = None
+        self.password_reset_sent_at = None
+        self.password_last_changed = timezone.now()
         self.save()
 
     def confirm_phone(self) -> None:

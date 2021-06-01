@@ -1,5 +1,5 @@
 from django.urls import path
-from accounts.views import UserAdminDetailView, UserAdminListView, UserCreateView, UserDeleteView, UserEmailVerificationConfirmView, UserPasswordChangeView, UserResendEmailVerificationView, UserRetrieveView, UserUpdateView
+from accounts.views import UserAdminDetailView, UserAdminListView, UserCreateView, UserDeleteView, UserEmailVerificationConfirmView, UserPasswordChangeView, UserPasswordResetConfirmView, UserPasswordResetView, UserResendEmailVerificationView, UserRetrieveView, UserUpdateView
 
 
 urlpatterns = [
@@ -13,4 +13,7 @@ urlpatterns = [
                             UserEmailVerificationConfirmView.as_view(), name = 'email-confirm'),
     path('resend_mail/', UserResendEmailVerificationView.as_view(), name = 'resend-email'),
     path('password/change/', UserPasswordChangeView.as_view(), name = 'password-change'),
+    path('password/reset/', UserPasswordResetView.as_view(), name = 'password-reset'),
+    path('password/reset/confirm/<str:password_reset_token>/', UserPasswordResetConfirmView.as_view(),
+                                                                 name = 'password-reset-confirm'),
 ]

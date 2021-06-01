@@ -70,3 +70,16 @@ class UserPasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError(_('Passwords do not match'))
         
         return attrs
+
+class UserPasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class UserPasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(validators = [validate_password])
+    new_password2 = serializers.CharField()
+
+    def validate(self, attrs) -> str:
+        if attrs['new_password'] != attrs['new_password2']:
+            raise serializers.ValidationError(_('Passwords do not match'))
+        
+        return attrs
