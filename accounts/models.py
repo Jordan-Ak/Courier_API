@@ -1,3 +1,4 @@
+from accounts.tasks import generate_token_sh
 import secrets
 import random
 import string
@@ -49,12 +50,12 @@ class CustomUser(AbstractUser, BaseModel):
         return token
 
     def generate_email_verification_token(self) -> None:
-        self.email_verification_token = self.generate_token()
+        self.email_verification_token = generate_token_sh.apply_async().get()
         self.email_token_sent_at = timezone.now()
         self.save()
 
     def generate_password_verification_token(self) -> None:
-        self.password_reset_token = self.generate_token()
+        self.password_reset_token = generate_token_sh.apply_async().get()
         self.password_reset_sent_at = timezone.now()
         #self.password_last_changed = timezone.now()
         self.save()

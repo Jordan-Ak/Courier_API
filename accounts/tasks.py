@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 # Create your tasks here
-
+import secrets
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -35,3 +35,8 @@ def user_password_reset_send_sh(user_email, user_token):
         'from admin@email.com',
         [f'{user_email}'],
         fail_silently = False,)
+
+@shared_task
+def generate_token_sh() -> str:
+        token = secrets.token_urlsafe(50)
+        return token
