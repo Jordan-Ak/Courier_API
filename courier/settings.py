@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
 
     #Third party apps
     'rest_framework',
@@ -90,7 +91,7 @@ WSGI_APPLICATION = 'courier.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2', #Remember to install psycopg2 (pip install psycopg2)
+        'ENGINE': 'django.contrib.gis.db.backends.postgis', #Remember to install psycopg2 (pip install psycopg2)
         'NAME': 'courier', #This name has to be the exact name as the database you setup in pgadmin 4
         'USER': env.str('USER'),#Default username for postgresql after install postgresql
         'PASSWORD': env.str('PASSWORD'),#Remember the password you used during installation.
@@ -149,6 +150,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (str(BASE_DIR.joinpath('static')),)
+STATIC_ROOT = str(BASE_DIR.joinpath('staticfiles'))
+MEDIA_ROOT = '/static/images/'
+MEDIA_URL = '127.0.0.1/stored_images/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
