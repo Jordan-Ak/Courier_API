@@ -1,9 +1,10 @@
 from services.services import tag_create
-from services.serializers import TagCreateSerializer
+from services.serializers import TagCreateSerializer, TagListSerializer
 from rest_framework.views import APIView
-from rest_framework import permissions
+from rest_framework import generics, permissions
 from rest_framework.views import Response
 from rest_framework import status
+from .models import Tags
 
 class TagCreateView(APIView):
     serializer_class = TagCreateSerializer
@@ -15,4 +16,8 @@ class TagCreateView(APIView):
         data = serializer.validated_data
         tag_create(data['name'])
         return Response({'message':'Tag created Succesfully'}, status = status.HTTP_201_CREATED)
-        
+
+class TagListView(generics.ListAPIView):
+    serializer_class = TagListSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = Tags.objects.all()
