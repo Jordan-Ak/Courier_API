@@ -8,13 +8,13 @@ def vendor_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/vendor_<id>/<filename>
     return 'vendor_{0}/{1}'.format(instance.user.id, filename)
 
-class Tags(BaseModel, models.Model):
+class Tag(BaseModel, models.Model):
     name = models.CharField(_('Tag Name'),max_length = 25,)
 
     def __str__(self):
         return self.name.title()
 
-class Services(BaseModel, models.Model):
+class Vendor(BaseModel, models.Model):
     RESTAURANT = 'REST'
     PARTY = 'PARTY'
     PHARMACY = 'PHAR'
@@ -30,7 +30,7 @@ class Services(BaseModel, models.Model):
 
     name = models.CharField(_('Vendor Name'),max_length = 150,)
     service = models.CharField(_('Service'),max_length = 6, choices=service_choices)
-    tags = models.ManyToManyField(Tags)
+    tags = models.ManyToManyField(Tag)
     opening_time = models.TimeField(_('Opening Time'), null = True)
     closing_time = models.TimeField(_('Closing Time'), null = True)
     location = models.CharField(_('location'),max_length = 200)
@@ -45,11 +45,11 @@ class Location(BaseModel, models.Model):
 
 class ProductCategory(BaseModel, models.Model):
     name = models.CharField(_('Product category name'),max_length = 50,)
-    vendor = models.ForeignKey(Services, on_delete = models.CASCADE,)
+    vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
     
 
 class Products(BaseModel, models.Model):
-    vendor = models.ForeignKey(Services, on_delete = models.CASCADE,)
+    vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
     name = models.CharField(_('Product Name'),max_length = 50,)
     detail = models.CharField(_('Product Detail'),max_length = 1000,)
     price = models.FloatField(_('Product Price'),)

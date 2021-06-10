@@ -6,7 +6,7 @@ urlpatterns=[
     path('tag/create', TagCreateView.as_view(), name = 'tag-create'),
     path('tag/list', TagListView.as_view(), name = 'tag-list'),
     path('tag/delete/<str:name>/', TagDeleteView.as_view(), name = 'tag-delete'),
-    path('vendor/create', ServiceCreateView.as_view(), name = 'service-create'),
-    path('vendor/delete/<str:name>/', ServiceDeleteView.as_view(), name = 'service-delete'),
-    path('vendor/list/', ServiceListView.as_view(), name = 'service-list')
+    path('vendor/create', ServiceCreateView.as_view(), name = 'vendor-create'),
+    path('vendor/delete/<str:name>/', ServiceDeleteView.as_view(), name = 'vendor-delete'),
+    path('vendor/list/', ServiceListView.as_view(), name = 'vendor-list')
 ]
