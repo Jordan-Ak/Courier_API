@@ -33,7 +33,7 @@ class TagDeleteView(APIView):
         return Response({'message':'Tag deleted successfully'}, status=status.HTTP_200_OK)
 
 
-class ServiceCreateView(APIView):
+class VendorCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = VendorCreateSerializer
 
@@ -46,7 +46,7 @@ class ServiceCreateView(APIView):
                                                  status= status.HTTP_201_CREATED)
 
 
-class ServiceListView(generics.ListAPIView):
+class VendorListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = VendorListSerializer
     #######!!!! Remember to associate the Vendor/Service to a user or not
@@ -58,7 +58,7 @@ class ServiceListView(generics.ListAPIView):
             return Vendor.objects.all()
 
 
-class ServiceDeleteView(APIView):
+class VendorDeleteView(APIView):
     permissions_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
