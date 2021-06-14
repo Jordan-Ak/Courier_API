@@ -18,15 +18,34 @@ class VendorCreateSerializer(serializers.Serializer):
     name = serializers.CharField(validators = [UniqueValidator], required = True)
     service = serializers.ChoiceField(choices = Vendor.service_choices, required = True)
     tags = TagSerializer(many = True,required = False,)
-    opening_time = serializers.TimeField(required = False, format = "%H:%M")
-    closing_time = serializers.TimeField(required = False, format = "%H:%M")
+    #opening_time = serializers.TimeField(required = False, format = "%H:%M")
+    #closing_time = serializers.TimeField(required = False, format = "%H:%M")
     location = serializers.CharField(required = False,)
     cover = serializers.ImageField(required = False)
-    Rating = serializers.DecimalField(max_digits = 2, decimal_places=1, read_only = True,)
-    
+    rating = serializers.DecimalField(max_digits = 2, decimal_places=1, read_only = True,)
+    users = serializers.CharField(read_only = True,) 
+
+
+class VendorRetrieveSerializer(serializers.Serializer):
+    name = serializers.CharField(validators = [UniqueValidator], required = True)
+    service = serializers.ChoiceField(choices = Vendor.service_choices, required = True)
+    tags = TagSerializer(many = True, required = False,)
+    #opening_time = serializers.TimeField(required = False, format = "%H:%M")
+    #closing_time = serializers.TimeField(required = False, format = "%H:%M")
+    location = serializers.CharField(required = False,)
+    cover = serializers.ImageField(required = False)
+    rating = serializers.DecimalField(max_digits = 2, decimal_places=1, read_only = True,)
+    users = serializers.CharField(read_only = True,)
+
+class VendorUpdateSerializer(serializers.Serializer):
+    tags = TagSerializer(many = True, required = False)
+    location = serializers.CharField(required = False)
+    cover = serializers.ImageField(required = False)
 
 class VendorListSerializer(serializers.ModelSerializer):
-    
+    tags = TagSerializer(many = True,)
     class Meta:
         model = Vendor
-        fields = '__all__'
+        fields = ('name', 'service','location','tags','rating',
+                     'users','cover','date_created','date_updated',)           
+       

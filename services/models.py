@@ -8,8 +8,8 @@ from django.utils.translation import ugettext_lazy as _
 # Create your models here.
 
 def vendor_directory_path(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/vendor_<id>/<filename>
-    return 'vendor_{0}/{1}'.format(instance.user.id, filename)
+    # file will be uploaded to MEDIA_ROOT/vendor_<name>_<id>/<filename>
+    return 'vendor_{0}_{1}/{2}'.format(instance.name, instance.id, filename)
 
 class Tag(BaseModel, models.Model):
     name = models.CharField(_('Tag Name'),max_length = 25,)
@@ -36,9 +36,10 @@ class Vendor(BaseModel, models.Model):
     tags = models.ManyToManyField(Tag)
     #opening_time = models.TimeField(_('Opening Time'), null = True)
     #closing_time = models.TimeField(_('Closing Time'), null = True)
-    location = models.CharField(_('location'),max_length = 200)
+    location = models.CharField(_('location'),max_length = 200,)
     cover = models.ImageField(_('Vendor image cover'),upload_to=vendor_directory_path)
-    Rating = models.DecimalField(_('Rating'),decimal_places=1, editable=False, max_digits = 2, null = True)
+    rating = models.DecimalField(_('Rating'),decimal_places=1, editable=False, max_digits = 2, null = True)
+    users = models.ForeignKey(get_user_model(), on_delete = models.SET_DEFAULT, default = '143d24de-78b8-478a-919b-1022059cc2ec')
 
     def __str__(self):
         return self.name.title()

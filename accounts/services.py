@@ -65,18 +65,37 @@ def user_email_verification_confirm(user):
 
 
 def user_retrieve_pk(id) -> get_user_model:
-    user = get_object_or_404(get_user_model(),id = id)
-    return user
+    #user = get_object_or_404(get_user_model(),id = id)
+    try:
+        user_obj = get_user_model().objects.get(id = id)
+    
+    except get_user_model().DoesNotExist:
+        raise serializers.ValidationError(_('This user does not exist'))
+        
+    return user_obj
 
 
 
 def user_retrieve_em(email) -> get_user_model:
-    user = get_object_or_404(get_user_model(),email = email)
-    return user
+    #user = get_object_or_404(get_user_model(),email = email)
+    try:
+        user_obj = get_user_model().objects.get(email = email)
+    
+    except get_user_model().DoesNotExist:
+        raise serializers.ValidationError(_('This user does not exist'))
+    
+    return user_obj
 
 def user_retrieve_pass_tk(token) -> get_user_model:
-    user = get_object_or_404(get_user_model(), password_reset_token = token)
-    return user
+    #user = get_object_or_404(get_user_model(), password_reset_token = token)
+    try:
+        user_obj = get_user_model().objects.get(password_reset_token = token)
+    
+    except get_user_model().DoesNotExist:
+        raise serializers.ValidationError(_('This user does not exist'))
+    
+    return user_obj
+
 
 def user_update(instance, **validated_data):
     instance.first_name = validated_data.get('first_name', instance.first_name)
