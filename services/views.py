@@ -1,10 +1,15 @@
-from services.services import vendor_create, vendor_delete, vendor_get_id, vendor_get_name, tag_create, tag_delete, vendor_update
-from services.serializers import VendorCreateSerializer, VendorListSerializer, TagCreateSerializer, TagListSerializer, VendorRetrieveSerializer, VendorUpdateSerializer
+from services.services import (vendor_create, vendor_delete, 
+                               vendor_get_id, vendor_get_name, tag_create, 
+                               tag_delete, vendor_update)
+from services.serializers import (VendorCreateSerializer, VendorListSerializer,
+                                   TagCreateSerializer, TagListSerializer, 
+                                   VendorRetrieveSerializer, VendorUpdateSerializer)
 from rest_framework.views import APIView
 from rest_framework import generics, permissions
 from rest_framework.views import Response
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
 from .models import Vendor, Tag
 from .permissions import IsAdmin, IsOwner
 
@@ -12,6 +17,9 @@ class TagCreateView(APIView):
     serializer_class = TagCreateSerializer
     permission_classes = [permissions.IsAdminUser]
 
+    @swagger_auto_schema(operation_id='Create a Tag', operation_description='Tag Creation endpoint',
+                         request_body=TagCreateSerializer,
+                         responses={'200': 'Tag created Successfully'})
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception= True)
@@ -27,6 +35,9 @@ class TagListView(generics.ListAPIView):
 class TagDeleteView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
+    @swagger_auto_schema(operation_id='Delete Tag', operation_description='Tag delete endpoint',
+                         request_body=None,
+                         responses={'200': 'Tag deleted Successfully'})
     def post(self, request, *args, **kwargs):
         tag_select = kwargs['name'] #getting specific tag from url using tag name
         tag = get_object_or_404(Tag.objects.all(), name = tag_select)
@@ -38,6 +49,9 @@ class VendorCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = VendorCreateSerializer
 
+    @swagger_auto_schema(operation_id='Create a New Vendor', operation_description='Vendor create endpoint',
+                         request_body=VendorCreateSerializer,
+                         responses={'200': VendorCreateSerializer()})
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception=True)
@@ -52,11 +66,18 @@ class VendorRetrieveUpdateView(APIView):
     serializer_class_GET = VendorRetrieveSerializer
     serializer_class_PUT = VendorUpdateSerializer
 
+    @swagger_auto_schema(operation_id='Retrieve specific vendor',
+                          operation_description='Vendor retreive endpoint',
+                         request_body=None,
+                         responses={'200': VendorRetrieveSerializer()})
     def get(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['id'])
         serializer = self.serializer_class_GET(vendor)
         return Response(serializer.data)
 
+    @swagger_auto_schema(operation_id='Update vendor', operation_description='Vendor update endpoint',
+                         request_body=VendorUpdateSerializer,
+                         responses={'200': VendorUpdateSerializer()})
     def put(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['id'])
         serializer = self.serializer_class_PUT(data = request.data, instance = vendor)
@@ -64,6 +85,11 @@ class VendorRetrieveUpdateView(APIView):
         vendor_update(vendor,**serializer.validated_data)
         return Response({'message':'Vendor details Successfully updated'}, status.HTTP_200_OK)
     
+
+    @swagger_auto_schema(operation_id='Update vendor', 
+                         operation_description='Vendor partial-update endpoint',
+                         request_body=VendorUpdateSerializer,
+                         responses={'200': VendorUpdateSerializer()})
     def patch(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['id'])
         serializer = self.serializer_class_PUT(data = request.data, instance = vendor, partial = True,)
@@ -87,6 +113,9 @@ class VendorListView(generics.ListAPIView):
 class VendorDeleteView(APIView):
     permissions_classes = [IsAdmin]
 
+    @swagger_auto_schema(operation_id='Delete Vendor', operation_description='Vendor delete endpoint',
+                         request_body=None,
+                         responses={'200': 'Vendor deleted Successfully'})
     def post(self, request, *args, **kwargs):
         vendor_id = kwargs['id']  #Name gotten from url
         vendor = get_object_or_404(Vendor.objects.all(), id= vendor_id)
