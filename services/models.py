@@ -60,7 +60,7 @@ class Schedule(BaseModel, models.Model):
     weekday = models.PositiveSmallIntegerField(_('Weekday'),choices = WEEKDAYS)
     from_hour = models.TimeField(_('From Time'),)
     to_hour = models.TimeField(_('To Time'),)
-    closed_open = models.PositiveSmallIntegerField(_('Closed or Open'), choices = STATUS,)
+    closed_open = models.PositiveSmallIntegerField(_('Closed or Open'), choices = STATUS,null = True)
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE)
     
     class Meta:

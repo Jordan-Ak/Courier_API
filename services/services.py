@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import Tag, Vendor
+from .models import Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -44,9 +45,17 @@ def vendor_get_id(id) -> Vendor:
     try:
         vendor = Vendor.objects.get(id = id)
     
-    except Vendor.DoesNotExist:
+    except (Vendor.DoesNotExist, ValidationError):
         raise serializers.ValidationError(_('Vendor does not exist.'))
     return vendor
+
+def vendor_get_user(user) -> Vendor:
+    try:
+        vendor = Vendor.objects.get(user = user)
+    except Vendor.DoesNotExist:
+        raise serializers.ValidationError(_('This user has no associated Vendor'))
+
+    return vendor        
 
 def vendor_delete(object) -> None:
     object.delete()
@@ -100,4 +109,34 @@ def vendor_update(instance, **validated_data) -> Vendor:
     instance.save()
 
     return instance
-    
+
+def schedule_create(user_id,**kwargs):
+    vendor = vendor_get_id(kwargs['vendor'])
+    try:
+        vendor_obj = Vendor.objects.filter(users = user_id).filter(id = vendor.id)
+    except Vendor.DoesNotExist:
+        raise serializers.ValidationError(_('This Vendor does not exist'))
+    if not vendor_obj:
+        raise serializers.ValidationError(_("This Vendor is unavailable to current user."))
+
+    weekday = kwargs['weekday']
+    schedule_duplicate_check = Schedule.objects.filter(vendor = vendor).filter(weekday =weekday)
+    if schedule_duplicate_check:
+        raise serializers.ValidationError(_('You have already created a Schedule for this day'))
+
+    schedule = Schedule.objects.create(vendor =vendor, weekday = weekday,
+                            from_hour = kwargs.get('from_hour',''),
+                            to_hour = kwargs.get('to_hour',''),
+                            )
+      
+    schedule.save()
+    schedule.vendor_status()
+    return schedule
+
+def schedule_update(instance,**validated_data):
+
+    instance.from_hour = validated_data.get('from_hour', instance.from_hour)
+    instance.to_hour = validated_data.get('to_hour', instance.to_hour)
+
+    instance.save()
+    return instance

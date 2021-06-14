@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-from .models import Tag, Vendor, vendor_directory_path
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from .models import Tag, Vendor, vendor_directory_path, Schedule
 
 class TagCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -48,4 +48,40 @@ class VendorListSerializer(serializers.ModelSerializer):
         model = Vendor
         fields = ('name', 'service','location','tags','rating',
                      'users','cover','date_created','date_updated',)           
-       
+
+class VendorScheduleSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+
+class ScheduleCreateSerializer(serializers.Serializer):
+    vendor = VendorScheduleSerializer(read_only = True, required = False)
+    weekday = serializers.ChoiceField(choices=Schedule.WEEKDAYS,)
+    from_hour = serializers.TimeField()
+    to_hour = serializers.TimeField()
+    closed_open = serializers.ChoiceField(choices = Schedule.STATUS, read_only = True)
+      
+    #class Meta:
+     #   validators = [
+      #      UniqueTogetherValidator(queryset=Schedule.objects.all(),
+       #                             fields = ['vendor','weekday'],
+       #                             message = 'You have already created a schedule for this weekday')
+        #]
+    
+class ScheduleListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Schedule
+        fields = ('vendor', 'weekday', 'from_hour','to_hour','closed_open')
+
+class ScheduleRetrieveListSerializer(serializers.Serializer):
+    vendor = VendorScheduleSerializer(read_only = True)
+    weekday = serializers.ChoiceField(choices=Schedule.WEEKDAYS,read_only = True)
+    from_hour = serializers.TimeField()
+    to_hour = serializers.TimeField()
+    closed_open = serializers.ChoiceField(choices = Schedule.STATUS, read_only = True)
+
+class ScheduleRetrieveUpdateSerializer(serializers.Serializer):
+    vendor = VendorScheduleSerializer(read_only = True)
+    weekday = serializers.ChoiceField(choices=Schedule.WEEKDAYS,read_only = True)
+    from_hour = serializers.TimeField()
+    to_hour = serializers.TimeField()
+    closed_open = serializers.ChoiceField(choices = Schedule.STATUS, read_only = True)
