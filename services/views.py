@@ -1,4 +1,4 @@
-from services.services import (schedule_create, schedule_update, vendor_create, vendor_delete, 
+from services.services import (schedule_create, schedule_update, schedule_vendor_day_filter, schedule_vendor_filter, vendor_create, vendor_delete, 
                                vendor_get_id, vendor_get_name, tag_create, 
                                tag_delete, vendor_get_user, vendor_update)
 from services.serializers import (ScheduleCreateSerializer, ScheduleListSerializer, ScheduleRetrieveListSerializer, ScheduleRetrieveUpdateSerializer, VendorCreateSerializer, VendorListSerializer,
@@ -83,6 +83,7 @@ class VendorRetrieveUpdateView(APIView):
         serializer = self.serializer_class_PUT(data = request.data, instance = vendor)
         serializer.is_valid(raise_exception=True)
         vendor_update(vendor,**serializer.validated_data)
+        
         return Response({'message':'Vendor details Successfully updated'}, status.HTTP_200_OK)
     
 
@@ -95,6 +96,7 @@ class VendorRetrieveUpdateView(APIView):
         serializer = self.serializer_class_PUT(data = request.data, instance = vendor, partial = True,)
         serializer.is_valid(raise_exception=True)
         vendor_update(vendor,**serializer.validated_data)
+        
         return Response({'message':'Vendor details Successfully updated'}, status.HTTP_200_OK)
 
 
@@ -120,22 +122,22 @@ class VendorDeleteView(APIView):
         vendor_id = kwargs['id']  #Name gotten from url
         vendor = get_object_or_404(Vendor.objects.all(), id= vendor_id)
         vendor_delete(vendor)
+        
         return Response({'message': 'Vendor deleted Successfully'}, status = status.HTTP_200_OK)
 
 class ScheduleCreateView(APIView):
-    permissions_classes = [permissions.IsAuthenticated]
+    permissions_classes = [permissions.IsAuthenticated,] #Validation in post method doesn't allow non-owners
     serializer_class = ScheduleCreateSerializer
     
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception = True)
         user_id = request.user.id
-        vendor = vendor_get_id(kwargs['vendor'])
-        serializer.validated_data['vendor'] = vendor.id
+        #vendor = vendor_get_id(kwargs['vendor'])
+        serializer.validated_data['vendor'] = kwargs['vendor'] #Vendor Id assignment
         schedule_create(user_id,**serializer.validated_data)
-        day = serializer.validated_data['weekday']
         
-        return Response({f'message':'Schedule for {day} been added successfully'}, status.HTTP_201_CREATED)
+        return Response({f'message':'Schedule for has been added successfully'}, status.HTTP_201_CREATED)
 
 
 class ScheduleListView(generics.ListAPIView):
@@ -143,22 +145,25 @@ class ScheduleListView(generics.ListAPIView):
     serializer_class = ScheduleListSerializer
     
     def get_queryset(self):
-        "Restricts the queryset depending on staff or not"
-        vendor_obj = Vendor.objects.filter(user = self.request.user.id)
+        "This endpoint is only for staff schedules for all vendors"
+        
         if self.request.user.is_staff != True:
-            return Schedule.objects.filter(vendor = vendor_obj)
+            return None
         else:
-            return Vendor.objects.all()
+            return Schedule.objects.all()
 
 class ScheduleRetrieveListView(APIView):
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [permissions.AllowAny]
     serializer_class = ScheduleRetrieveListSerializer
 
     def get(self, request, *args, **kwargs):
         vendor_id = kwargs['vendor']
         vendor = vendor_get_id(vendor_id)
-        schedule = Schedule.objects.filter(vendor = vendor)
-        serializer = self.serializer_class(schedule)
+        schedules = schedule_vendor_filter(vendor)
+        for schedule in schedules:
+            schedule.vendor_status()  #To refresh whether closed or open
+        serializer = self.serializer_class(schedules, many = True)
+        
         return Response(serializer.data, status= status.HTTP_200_OK)
 
 class ScheduleRetrieveUpdateView(APIView):
@@ -168,8 +173,10 @@ class ScheduleRetrieveUpdateView(APIView):
     def get(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['vendor'])
         weekday = kwargs['weekday']
-        schedule = Schedule.objects.filter(vendor=vendor).filter(weekday = weekday)[0]
+        schedule = schedule_vendor_day_filter(vendor, weekday)
+        schedule.vendor_status()
         serializer = self.serializer_class(schedule)
+        
         return Response(serializer.data, status = status.HTTP_200_OK)
     
     def put(self, request, *args, **kwargs):
@@ -177,8 +184,9 @@ class ScheduleRetrieveUpdateView(APIView):
         serializer.is_valid(raise_exception = True,)
         vendor = kwargs['vendor']
         weekday = kwargs['weekday']
-        schedule = Schedule.objects.filter(vendor = vendor).filter(weekday = weekday)[0]
+        schedule = schedule_vendor_day_filter(vendor, weekday)
         schedule_update(schedule, **serializer.validated_data)
+        
         return Response({'message':'Schedule has been updated successfully'}, status = status.HTTP_200_OK)
 
 class ScheduleDeleteView(APIView):
@@ -186,8 +194,8 @@ class ScheduleDeleteView(APIView):
 
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
-        schedules = Schedule.objects.filter(vendor = vendor)
-
+        schedules = schedule_vendor_filter(vendor)
         for schedule in schedules:
             schedule.delete()
+        
         return Response({'message':'Schedules have been deleted successfully'}, status = status.HTTP_200_OK)

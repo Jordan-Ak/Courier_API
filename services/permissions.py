@@ -17,3 +17,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return True
         
         return request.user.is_staff
+
+class ScheduleOwner(permissions.BasePermission):
+    def has_permission(self, request, view):
+        pass

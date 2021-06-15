@@ -67,17 +67,18 @@ class ScheduleCreateSerializer(serializers.Serializer):
         #]
     
 class ScheduleListSerializer(serializers.ModelSerializer):
-
+    vendor = serializers.CharField(source = 'vendor.name')
+    weekday = serializers.ChoiceField(choices=Schedule.WeekdayChoices.choices,) #Get source
     class Meta:
         model = Schedule
         fields = ('vendor', 'weekday', 'from_hour','to_hour','closed_open')
 
 class ScheduleRetrieveListSerializer(serializers.Serializer):
     vendor = VendorScheduleSerializer(read_only = True)
-    weekday = serializers.ChoiceField(choices=Schedule.WeekdayChoices.choices,read_only = True)
+    weekday = serializers.ChoiceField(choices=Schedule.WeekdayChoices.choices,read_only = True,)
     from_hour = serializers.TimeField()
     to_hour = serializers.TimeField()
-    closed_open = serializers.ChoiceField(choices = Schedule.StatusChoices.choices, read_only = True)
+    closed_open = serializers.ChoiceField(choices = Schedule.StatusChoices.choices, read_only = True,)
 
 class ScheduleRetrieveUpdateSerializer(serializers.Serializer):
     vendor = VendorScheduleSerializer(read_only = True)

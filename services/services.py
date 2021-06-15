@@ -139,4 +139,19 @@ def schedule_update(instance,**validated_data):
     instance.to_hour = validated_data.get('to_hour', instance.to_hour)
 
     instance.save()
+    instance.vendor_status()
     return instance
+
+def schedule_vendor_day_filter(vendor, weekday):
+    try:
+        schedule = Schedule.objects.filter(vendor=vendor).filter(weekday = weekday)[0]
+    except IndexError:
+        raise serializers.ValidationError(_('Schedule for this day does not exist.'))
+    return schedule
+
+def schedule_vendor_filter(vendor):
+    try:
+        schedules = Schedule.objects.filter(vendor=vendor)
+    except ValidationError:
+        raise serializers.ValidationError(_('This vendor does not exist.'))
+    return schedules    
