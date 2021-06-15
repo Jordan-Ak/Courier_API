@@ -70,7 +70,10 @@ class Schedule(BaseModel, models.Model):
         day_of_week = datetime.datetime.today().weekday()
         today_object = Schedule.objects.filter(vendor = self.vendor).filter(weekday = day_of_week)
         #Above code should return only one value
-        today = today_object[0]
+        try:
+            today = today_object[0]
+        except IndexError:
+            return None      #This means weekday hasn't been set for this day
         current_time = datetime.datetime.now().time()
         
         """
@@ -101,7 +104,7 @@ class Schedule(BaseModel, models.Model):
         self.save()
 
     def __str__(self):
-        self.vendor.name.title()
+        return f'{self.vendor.name.title()}, {self.weekday}'
 
 class Location(BaseModel, models.Model):
     pass
