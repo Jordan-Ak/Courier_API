@@ -18,21 +18,28 @@ class Tag(BaseModel, models.Model):
         return self.name.title()
 
 class Vendor(BaseModel, models.Model):
-    RESTAURANT = 'REST'
-    PARTY = 'PARTY'
-    PHARMACY = 'PHAR'
-    GROCERIES = 'GRO'
-    CLOTHING = 'CLOTH'
-    service_choices = [
-        (RESTAURANT, 'restaurant'),
-        (PARTY, 'party'),
-        (PHARMACY, 'pharmacy'),
-        (GROCERIES, 'groceries'),
-        (CLOTHING, 'clothing'),
-    ]
+  #  RESTAURANT = 'REST'
+   # PARTY = 'PARTY'
+   # PHARMACY = 'PHAR'
+   # GROCERIES = 'GRO'
+   # CLOTHING = 'CLOTH'
+   # service_choices = [
+   #     (RESTAURANT, 'restaurant'),
+   #     (PARTY, 'party'),
+   #     (PHARMACY, 'pharmacy'),
+    #    (GROCERIES, 'groceries'),
+    #    (CLOTHING, 'clothing'),
+    #]
+
+    class ServiceChoices(models.TextChoices):
+        RESTAURANT = 'REST', _('Restaurant')
+        PARTY = 'PARTY', _('Party')
+        PHARMACY = 'PHAR', _('Pharmacy')
+        GROCERIES = 'GRO', _('Groceries')
+        CLOTHING = 'CLOTH', _('Clothing')
 
     name = models.CharField(_('Vendor Name'),max_length = 150,)
-    service = models.CharField(_('Service'),max_length = 6, choices=service_choices)
+    service = models.CharField(_('Service'),max_length = 6, choices=ServiceChoices.choices,)
     tags = models.ManyToManyField(Tag)
     #opening_time = models.TimeField(_('Opening Time'), null = True)
     #closing_time = models.TimeField(_('Closing Time'), null = True)
@@ -45,22 +52,35 @@ class Vendor(BaseModel, models.Model):
         return self.name.title()
 
 class Schedule(BaseModel, models.Model):
-    WEEKDAYS = [
-    (0, _("Monday")),
-    (1, _("Tuesday")),
-    (2, _("Wednesday")),
-    (3, _("Thursday")),
-    (4, _("Friday")),
-    (5, _("Saturday")),
-    (6, _("Sunday")),
-    ]
+    #WEEKDAYS = [
+    #(0, _("Monday")),
+    #(1, _("Tuesday")),
+    #(2, _("Wednesday")),
+    #(3, _("Thursday")),
+    #(4, _("Friday")),
+    #(5, _("Saturday")),
+    #(6, _("Sunday")),
+    #]
+    class WeekdayChoices(models.IntegerChoices):
+        MONDAY = 0, _('Monday')
+        TUESDAY = 1, _('Tuesday')
+        WEDNESDAY = 2, _('Wednesday')
+        THURSDAY = 3, _('Thursday')
+        FRIDAY = 4, _('Friday')
+        SATURDAY = 5, _('Saturday')
+        SUNDAY = 6, _('Sunday')
     
-    STATUS =[(0, _("Closed")), (1, _('Open')),]
+    class StatusChoices(models.IntegerChoices):
+        CLOSED = 0, _('Closed')
+        OPEN = 1, _('Open')
 
-    weekday = models.PositiveSmallIntegerField(_('Weekday'),choices = WEEKDAYS)
+
+    #STATUS =[(0, _("Closed")), (1, _('Open')),]
+
+    weekday = models.PositiveSmallIntegerField(_('Weekday'),choices = WeekdayChoices.choices)
     from_hour = models.TimeField(_('From Time'),)
     to_hour = models.TimeField(_('To Time'),)
-    closed_open = models.PositiveSmallIntegerField(_('Closed or Open'), choices = STATUS,null = True)
+    closed_open = models.PositiveSmallIntegerField(_('Closed or Open'), choices = StatusChoices.choices,null = True)
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE)
     
     class Meta:
