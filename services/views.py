@@ -1,7 +1,7 @@
-from services.services import (schedule_create, schedule_update, schedule_vendor_day_filter, schedule_vendor_filter, vendor_create, vendor_delete, 
+from services.services import (product_category_create, product_category_delete, product_category_update, product_category_ven_cat_filter, product_category_ven_filter, product_user_validation, schedule_create, schedule_update, schedule_vendor_day_filter, schedule_vendor_filter, vendor_create, vendor_delete, 
                                vendor_get_id, vendor_get_name, tag_create, 
                                tag_delete, vendor_get_user, vendor_update)
-from services.serializers import (ScheduleCreateSerializer, ScheduleListSerializer, ScheduleRetrieveListSerializer, ScheduleRetrieveUpdateSerializer, VendorCreateSerializer, VendorListSerializer,
+from services.serializers import (ProductCategoryCreateSerializer, ProductCategoryListSerializer, ProductCategoryRetrieveUpdateSerializer, ScheduleCreateSerializer, ScheduleListSerializer, ScheduleRetrieveListSerializer, ScheduleRetrieveUpdateSerializer, VendorCreateSerializer, VendorListSerializer,
                                    TagCreateSerializer, TagListSerializer, 
                                    VendorRetrieveSerializer, VendorUpdateSerializer)
 from rest_framework.views import APIView
@@ -10,7 +10,7 @@ from rest_framework.views import Response
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from .models import Schedule, Vendor, Tag
+from .models import ProductCategory, Schedule, Vendor, Tag
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwner
 
 class TagCreateView(APIView):
@@ -114,7 +114,7 @@ class VendorListView(generics.ListAPIView):
 
 class VendorDeleteView(APIView):
     permissions_classes = [IsAdmin]
-
+    
     @swagger_auto_schema(operation_id='Delete Vendor', operation_description='Vendor delete endpoint',
                          request_body=None,
                          responses={'200': 'Vendor deleted Successfully'})
@@ -186,12 +186,21 @@ class ScheduleRetrieveUpdateView(APIView):
         weekday = kwargs['weekday']
         schedule = schedule_vendor_day_filter(vendor, weekday)
         schedule_update(schedule, **serializer.validated_data)
-        
         return Response({'message':'Schedule has been updated successfully'}, status = status.HTTP_200_OK)
+
+    def patch(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data = request.data,partial = True)
+        serializer.is_valid(raise_exception = True,)
+        vendor = kwargs['vendor']
+        weekday = kwargs['weekday']
+        schedule = schedule_vendor_day_filter(vendor, weekday)
+        schedule_update(schedule, **serializer.validated_data)
+        return Response({'message':'Schedule has been updated successfully'}, status = status.HTTP_200_OK)
+
 
 class ScheduleDeleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-
+#Make changes to permissions on this endpoint and take logic to service layer
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         schedules = schedule_vendor_filter(vendor)
@@ -199,3 +208,78 @@ class ScheduleDeleteView(APIView):
             schedule.delete()
         
         return Response({'message':'Schedules have been deleted successfully'}, status = status.HTTP_200_OK)
+
+class ProductCategoryCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ProductCategoryCreateSerializer
+    
+    def post(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        user_id = request.user.id
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        product_category_create(vendor,user_id,**serializer.validated_data)
+        return Response({'message':'Product Category created successfully'}, status = status.HTTP_201_CREATED)
+
+
+class ProductCategoryListView(APIView):
+    permissions_classes = [permissions.AllowAny]
+    serializer_class = ProductCategoryListSerializer
+    
+    def get(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        user_id = request.user.id
+        #product_user_validation(vendor,user_id)
+        product_category = product_category_ven_filter(vendor)
+        serializer = self.serializer_class(product_category, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class ProductCategoryRetrieveUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ProductCategoryRetrieveUpdateSerializer
+
+    def get(self, request, *args, **kwargs):
+        user_id = request.user.id
+        vendor = kwargs['vendor']
+        product_category = kwargs['slug_name']
+        product_user_validation(vendor,user_id)
+        data = product_category_ven_cat_filter(vendor, product_category)
+        serializer = self.serializer_class(data)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_category = kwargs['slug_name']
+        user_id = request.user.id
+        data = product_category_ven_cat_filter(vendor, product_category)
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        product_category_update(data, vendor,user_id, **serializer.validated_data)
+        return Response({'message':'Product Category has been updated successfully'},
+                                    status = status.HTTP_200_OK)
+
+    def patch(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_category = kwargs['slug_name']
+        user_id = request.user.id
+        data = product_category_ven_cat_filter(vendor, product_category)
+        serializer = self.serializer_class(data = request.data, partial = True)
+        serializer.is_valid(raise_exception = True)
+        product_category_update(data, vendor,user_id, **serializer.validated_data)
+        return Response({'message':'Product Category has been updated successfully'},
+                                    status = status.HTTP_200_OK)
+
+class ProductCategoryDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_cat = kwargs['slug_name']
+        user_id = request.user.id
+        product_user_validation(vendor,user_id)
+        product_obj = product_category_ven_cat_filter(vendor,product_cat)
+
+        product_category_delete(product_obj, user_id)
+        return Response({'message': 'Product Category deleted Successfully'}, status = status.HTTP_200_OK)
+
+        

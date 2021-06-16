@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from .models import Tag, Vendor, vendor_directory_path, Schedule
+from .models import ProductCategory, Tag, Vendor, vendor_directory_path, Schedule
 
 class TagCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -86,3 +86,20 @@ class ScheduleRetrieveUpdateSerializer(serializers.Serializer):
     from_hour = serializers.TimeField()
     to_hour = serializers.TimeField()
     closed_open = serializers.ChoiceField(choices = Schedule.StatusChoices.choices, read_only = True)
+
+
+class VendorProductCategorySerializer(serializers.Serializer):
+    id =serializers.UUIDField
+
+class ProductCategoryCreateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    vendor = VendorProductCategorySerializer(read_only = True)
+
+class ProductCategoryListSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    vendor = serializers.CharField(read_only = True, source = 'vendor.name')
+
+class ProductCategoryRetrieveUpdateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    vendor = serializers.CharField(read_only = True, source = 'vendor.name')
+    

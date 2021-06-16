@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import Schedule, Tag, Vendor
+from .models import ProductCategory, Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -155,3 +155,54 @@ def schedule_vendor_filter(vendor):
     except ValidationError:
         raise serializers.ValidationError(_('This vendor does not exist.'))
     return schedules    
+
+def product_category_create(vendor,user_id, **kwargs):
+    vendor_obj = vendor_get_id(vendor)
+    if vendor_obj.users.id != user_id:
+        raise serializers.ValidationError(_('This user cannot create category for this vendor')) #Validation only owner of vendor can create product category
+
+    product_cat = ProductCategory.objects.create(name = kwargs.get('name', ''), vendor=vendor_obj)
+    product_cat.save()
+    product_cat.generate_slug_name()
+    return product_cat
+
+def product_category_update(instance,vendor, user_id,**kwargs):
+    if not instance:
+        raise serializers.ValidationError(_('This product category does not exist.'))
+    
+    vendor_obj = vendor_get_id(vendor)
+    if vendor_obj.users.id != user_id:
+        raise serializers.ValidationError(_('This user cannot update this Vendor'))
+
+    instance.name = kwargs.get('name', instance.name)
+    instance.save()
+    instance.generate_slug_name()
+    return instance
+
+def product_category_delete(product_obj, user_id):
+    vendor_user = product_obj.vendor.user
+    if vendor_user.id != user_id:
+        raise serializers.ValidationError(_('This user cannot make changes to this vendor'))
+    
+    product_obj.delete()
+
+def product_category_ven_cat_filter(vendor, product_cat):
+    try:
+        object = ProductCategory.objects.filter(vendor = vendor).filter(slug_name = product_cat)
+    except ValidationError:
+        return None
+    if not object:
+        return None
+    else:
+        product = object[0]
+    return product
+
+def product_category_ven_filter(vendor):
+    object = ProductCategory.objects.filter(vendor = vendor)
+    return object    
+
+def product_user_validation(vendor, user_id):
+    vendor_obj = vendor_get_id(vendor)
+    if vendor_obj.users.id != user_id:
+        raise serializers.ValidationError(_('This user is not authorized to view this endpoint.'))
+    

@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from common.models import BaseModel
 from django.utils.translation import ugettext_lazy as _
+from django.utils.text import slugify
 
 # Create your models here.
 
@@ -133,6 +134,11 @@ class Location(BaseModel, models.Model):
 class ProductCategory(BaseModel, models.Model):
     name = models.CharField(_('Product category name'),max_length = 50,)
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
+    slug_name = models.SlugField(null = True, db_index=False)
+
+    def generate_slug_name(self):
+        self.slug_name = slugify(self.name)
+        self.save()
     
 
 class Products(BaseModel, models.Model):
