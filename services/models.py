@@ -2,6 +2,7 @@ import datetime
 from datetime import timezone
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models.aggregates import Max
 from common.models import BaseModel
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
@@ -11,6 +12,11 @@ from django.utils.text import slugify
 def vendor_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/vendor_<name>_<id>/<filename>
     return 'vendor_{0}_{1}/{2}'.format(instance.name, instance.id, filename)
+
+def product_directory_path(instance, filename):
+    #file will be uploaded to MEDIA_ROOT/vendor_<name>_<id>/product_cat/product
+    return 'vendor_{0}_{1}/{2}/{3}'.format(instance.vendor.name, instance.vendor.id,
+                                     instance.product_category.name,filename)
 
 class Tag(BaseModel, models.Model):
     name = models.CharField(_('Tag Name'),max_length = 25,)
@@ -141,13 +147,18 @@ class ProductCategory(BaseModel, models.Model):
         self.save()
     
 
-class Products(BaseModel, models.Model):
+class Product(BaseModel, models.Model):
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
     name = models.CharField(_('Product Name'),max_length = 50,)
-    detail = models.CharField(_('Product Detail'),max_length = 1000,)
-    price = models.FloatField(_('Product Price'),)
-    looks = models.ImageField(_('Product Image'),upload_to=vendor_directory_path)
+    detail = models.CharField(_('Product Detail'),max_length = 1000, null = True)
+    price = models.DecimalField(_('Product Price'),max_digits=10, decimal_places=2,)
+    looks = models.ImageField(_('Product Image'),upload_to=product_directory_path, null = True)
     product_category = models.ForeignKey(ProductCategory, on_delete=models.SET_DEFAULT, default = 'foods')
+    slug_name = models.SlugField(null = True, db_index = False)
+
+    def generate_slug_name(self):
+        self.slug_name = slugify(self.name)
+        self.save()
 
     def __str__(self):
         return self.name.title()

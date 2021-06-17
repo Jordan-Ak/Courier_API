@@ -1,16 +1,32 @@
-from services.services import (product_category_create, product_category_delete, product_category_update, product_category_ven_cat_filter, product_category_ven_filter, product_user_validation, schedule_create, schedule_update, schedule_vendor_day_filter, schedule_vendor_filter, vendor_create, vendor_delete, 
+from services.services import (product_category_create, product_category_delete,
+                               product_category_update, product_category_ven_cat_filter, 
+                               product_category_ven_filter, product_create, product_delete, product_update, 
+                               product_user_validation, product_ven_pro_cat_slug_filter, schedule_create, 
+                               schedule_update, schedule_vendor_day_filter, 
+                               schedule_vendor_filter, vendor_create, vendor_delete, 
                                vendor_get_id, vendor_get_name, tag_create, 
-                               tag_delete, vendor_get_user, vendor_update)
-from services.serializers import (ProductCategoryCreateSerializer, ProductCategoryListSerializer, ProductCategoryRetrieveUpdateSerializer, ScheduleCreateSerializer, ScheduleListSerializer, ScheduleRetrieveListSerializer, ScheduleRetrieveUpdateSerializer, VendorCreateSerializer, VendorListSerializer,
-                                   TagCreateSerializer, TagListSerializer, 
-                                   VendorRetrieveSerializer, VendorUpdateSerializer)
+                               tag_delete, vendor_get_user, vendor_retrieve_validation, vendor_update)
+
+from services.serializers import (ProductCategoryCreateSerializer, ProductCategoryListSerializer,
+                                  ProductCategoryRetrieveUpdateSerializer,
+                                  ProductCreateSerializer, ProductListSerializer, ProductRetrieveUpdateSerializer, ProductVendorListSerializer, ScheduleCreateSerializer,
+                                  ScheduleListSerializer, 
+                                  ScheduleRetrieveListSerializer,
+                                  ScheduleRetrieveUpdateSerializer,
+                                  VendorCreateSerializer, 
+                                  VendorListSerializer,
+                                   TagCreateSerializer, 
+                                   TagListSerializer, 
+                                   VendorRetrieveSerializer,
+                                    VendorUpdateSerializer)
+
 from rest_framework.views import APIView
 from rest_framework import generics, permissions
 from rest_framework.views import Response
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from .models import ProductCategory, Schedule, Vendor, Tag
+from .models import Product, ProductCategory, Schedule, Vendor, Tag
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwner
 
 class TagCreateView(APIView):
@@ -62,7 +78,7 @@ class VendorCreateView(APIView):
                                                  status= status.HTTP_201_CREATED)
 
 class VendorRetrieveUpdateView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsOwner,]
+    permission_classes = [permissions.IsAuthenticated,]
     serializer_class_GET = VendorRetrieveSerializer
     serializer_class_PUT = VendorUpdateSerializer
 
@@ -72,6 +88,8 @@ class VendorRetrieveUpdateView(APIView):
                          responses={'200': VendorRetrieveSerializer()})
     def get(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['id'])
+        user_id = self.request.user.id
+        vendor_retrieve_validation(vendor, user_id)
         serializer = self.serializer_class_GET(vendor)
         return Response(serializer.data)
 
@@ -80,7 +98,9 @@ class VendorRetrieveUpdateView(APIView):
                          responses={'200': VendorUpdateSerializer()})
     def put(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['id'])
-        serializer = self.serializer_class_PUT(data = request.data, instance = vendor)
+        user_id = self.request.user.id
+        vendor_retrieve_validation(vendor, user_id)
+        serializer = self.serializer_class_PUT(data = request.data,)# instance = vendor)
         serializer.is_valid(raise_exception=True)
         vendor_update(vendor,**serializer.validated_data)
         
@@ -93,6 +113,8 @@ class VendorRetrieveUpdateView(APIView):
                          responses={'200': VendorUpdateSerializer()})
     def patch(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['id'])
+        user_id = self.request.user.id
+        vendor_retrieve_validation(vendor, user_id)
         serializer = self.serializer_class_PUT(data = request.data, instance = vendor, partial = True,)
         serializer.is_valid(raise_exception=True)
         vendor_update(vendor,**serializer.validated_data)
@@ -282,4 +304,87 @@ class ProductCategoryDeleteView(APIView):
         product_category_delete(product_obj, user_id)
         return Response({'message': 'Product Category deleted Successfully'}, status = status.HTTP_200_OK)
 
-        
+
+class ProductCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ProductCreateSerializer
+    
+    def post(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        vendor_obj = vendor_get_id(vendor)
+        user_id = request.user.id
+        product_user_validation(vendor, user_id)
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        product_create(vendor_obj, **serializer.validated_data)
+        return Response({'message':'Product has been successfully created'}, status = status.HTTP_201_CREATED)
+
+class ProductListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = ProductListSerializer
+    queryset = Product.objects.all()
+
+class ProductVendorListView(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ProductVendorListSerializer
+    queryset = Product.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        queryset = Product.objects.filter(vendor = kwargs['vendor'])
+        serializer = self.serializer_class(queryset, many = True,)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class ProductRetrieveUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ProductRetrieveUpdateSerializer
+
+    def get(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_cat = kwargs['product_cat']
+        product_name = kwargs['slug_name']
+        user_id = self.request.user.id
+        product_user_validation(vendor, user_id)
+        product_obj = product_ven_pro_cat_slug_filter(vendor, product_cat, product_name)
+        serializer = self.serializer_class(product_obj)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_cat = kwargs['product_cat']
+        product_name = kwargs['slug_name']
+        user_id = self.request.user.id
+        product_user_validation(vendor, user_id)
+        product_obj = product_ven_pro_cat_slug_filter(vendor, product_cat, product_name)
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        product_update(product_obj, **serializer.validated_data)
+
+        return Response({'message':'Product has been updated successfully'}, status = status.HTTP_200_OK)
+
+
+    def patch(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_cat = kwargs['product_cat']
+        product_name = kwargs['slug_name']
+        user_id = self.request.user.id
+        product_user_validation(vendor, user_id)
+        product_obj = product_ven_pro_cat_slug_filter(vendor, product_cat, product_name)
+        serializer = self.serializer_class(data = request.data, partial=True)
+        serializer.is_valid(raise_exception = True)
+        product_update(product_obj, **serializer.validated_data)
+
+        return Response({'message':'Product has been updated successfully'}, status = status.HTTP_200_OK)
+
+class ProductDeleteView(APIView):
+    permissions_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        product_cat = kwargs['product_cat']
+        product_name = kwargs['slug_name']
+        user_id = self.request.user.id
+        product_user_validation(vendor, user_id)
+        product_obj = product_ven_pro_cat_slug_filter(vendor, product_cat, product_name)
+        product_delete(product_obj)
+
+        return Response({'message':'Product has been deleted successfully'}, status = status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from .models import ProductCategory, Tag, Vendor, vendor_directory_path, Schedule
+from .models import Product, ProductCategory, Tag, Vendor, vendor_directory_path, Schedule
 
 class TagCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -102,4 +102,37 @@ class ProductCategoryListSerializer(serializers.Serializer):
 class ProductCategoryRetrieveUpdateSerializer(serializers.Serializer):
     name = serializers.CharField()
     vendor = serializers.CharField(read_only = True, source = 'vendor.name')
+
+class VendorProductSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+
+class ProductCategoryProductSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+
+class ProductCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(required = True,)
+    detail = serializers.CharField(required = False)
+    price = serializers.DecimalField(required = True,max_digits=10, decimal_places=2,)
+    looks = serializers.ImageField(required = False)
+    product_category = ProductCategoryProductSerializer(default = 'foods',)
+    vendor = VendorProductSerializer(read_only = True)
     
+class ProductListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Product
+        fields = ('name', 'detail','price','looks','product_category','vendor',)
+
+class ProductVendorListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Product
+        fields = ('name', 'detail','price','looks','product_category','vendor',)
+
+class ProductRetrieveUpdateSerializer(serializers.Serializer):
+    name = serializers.CharField(required = False)
+    detail = serializers.CharField(required = False)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, required = False)
+    looks = serializers.ImageField(required = False)
+    product_category = ProductCategoryProductSerializer(required = False)
+    vendor = VendorProductSerializer(read_only = True)

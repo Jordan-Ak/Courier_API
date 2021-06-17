@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import ProductCategory, Schedule, Tag, Vendor
+from .models import ProductCategory, Product, Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -83,6 +83,11 @@ def vendor_create(user,**kwargs) -> Vendor:
         new_vendor.tags.add(tag_obj.id)   #Check this why add '.id'
     
     return new_vendor
+
+def vendor_retrieve_validation(vendor, user_id):
+    if vendor.users.id != user_id:
+        raise serializers.ValidationError(_('This user cannot retrieve this vendor.'))
+
 
 def vendor_update(instance, **validated_data) -> Vendor:
     for tag in validated_data.get('tags', ''):
@@ -201,8 +206,69 @@ def product_category_ven_filter(vendor):
     object = ProductCategory.objects.filter(vendor = vendor)
     return object    
 
+def product_category_get_id(id) -> ProductCategory:
+    try:
+        product_cat_object= ProductCategory.objects.get(id = id)
+    except ProductCategory.DoesNotExist:
+        raise serializers.ValidationError(_('This product category does not exist.'))
+    return product_cat_object
+
 def product_user_validation(vendor, user_id):
     vendor_obj = vendor_get_id(vendor)
     if vendor_obj.users.id != user_id:
         raise serializers.ValidationError(_('This user is not authorized to view this endpoint.'))
     
+
+def product_create(vendor_obj, **kwargs):
+    product_categories_obj = ProductCategory.objects.filter(vendor = vendor_obj.id)
+    product_category_dict = kwargs['product_category']
+    product_category_id = product_category_dict.get('id')
+    product_cat_obj = product_category_get_id(product_category_id)
+    
+    if product_cat_obj not in product_categories_obj:
+        raise serializers.ValidationError(_('This Category does not exist with current vendor.'))
+
+    product = Product.objects.create(name = kwargs.get('name'), detail = kwargs.get('detail',''),
+                           price = kwargs.get('price',''), looks = kwargs.get('looks',''),
+                           product_category = product_cat_obj, vendor = vendor_obj)
+                           
+    product.save()
+    return product
+
+def product_update(instance, **kwargs):
+    product_categories_obj = ProductCategory.objects.filter(vendor = instance.vendor.id)
+    product_category_dict = kwargs.get('product_category', '')
+    product_category_id = None
+    product_cat_obj = None
+    if product_category_dict:
+        product_category_id = product_category_dict.get('id')
+    #instance.product_category
+    if product_category_id:
+        product_cat_obj = product_category_get_id(product_category_id)
+
+        if product_cat_obj not in product_categories_obj:
+            raise serializers.ValidationError(_('This Category does not exist with current vendor.'))
+    
+    instance.name = kwargs.get('name', instance.name)
+    instance.detail = kwargs.get('detail', instance.detail)
+    instance.price = kwargs.get('price', instance.price)
+    instance.looks = kwargs.get('looks', instance.looks)
+    if product_cat_obj:
+        instance.product_category = product_cat_obj
+
+    instance.save()
+    instance.generate_slug_name()
+    return instance
+    
+def product_delete(object):
+    object.delete()
+
+    
+def product_ven_pro_cat_slug_filter(vendor, product_cat, product_name):
+    try:
+        product_obj = Product.objects.filter(vendor = vendor).filter(
+                                    product_category = product_cat).filter(slug_name = product_name)[0]
+    except (IndexError, ValidationError):
+        raise serializers.ValidationError(_('This product does not exist in this category or vendor'))
+    
+    return product_obj
