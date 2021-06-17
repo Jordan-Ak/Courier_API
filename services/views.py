@@ -9,16 +9,17 @@ from services.services import (product_category_create, product_category_delete,
 
 from services.serializers import (ProductCategoryCreateSerializer, ProductCategoryListSerializer,
                                   ProductCategoryRetrieveUpdateSerializer,
-                                  ProductCreateSerializer, ProductListSerializer, ProductRetrieveUpdateSerializer, ProductVendorListSerializer, ScheduleCreateSerializer,
-                                  ScheduleListSerializer, 
+                                  ProductCreateSerializer, ProductListSerializer,
+                                  ProductRetrieveUpdateSerializer, ProductVendorListSerializer,
+                                  ScheduleCreateSerializer,ScheduleListSerializer, 
                                   ScheduleRetrieveListSerializer,
                                   ScheduleRetrieveUpdateSerializer,
                                   VendorCreateSerializer, 
                                   VendorListSerializer,
-                                   TagCreateSerializer, 
-                                   TagListSerializer, 
-                                   VendorRetrieveSerializer,
-                                    VendorUpdateSerializer)
+                                  TagCreateSerializer, 
+                                  TagListSerializer, 
+                                  VendorRetrieveSerializer,
+                                  VendorUpdateSerializer)
 
 from rest_framework.views import APIView
 from rest_framework import generics, permissions
@@ -31,7 +32,7 @@ from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwner
 
 class TagCreateView(APIView):
     serializer_class = TagCreateSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAdminUser] #Only Admins can create Tags
 
     @swagger_auto_schema(operation_id='Create a Tag', operation_description='Tag Creation endpoint',
                          request_body=TagCreateSerializer,
@@ -45,11 +46,11 @@ class TagCreateView(APIView):
 
 class TagListView(generics.ListAPIView):
     serializer_class = TagListSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAdminUser] #Only admins have access to all tags at once at this endpoint.
     queryset = Tag.objects.all()
 
 class TagDeleteView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAdminUser] #Only admin users can delete tags.
 
     @swagger_auto_schema(operation_id='Delete Tag', operation_description='Tag delete endpoint',
                          request_body=None,
@@ -62,8 +63,8 @@ class TagDeleteView(APIView):
 
 
 class VendorCreateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = VendorCreateSerializer
+    permission_classes = [permissions.IsAuthenticated] #Have to be authenticated to create a vendor
+    serializer_class = VendorCreateSerializer           #Vendor are associated with a user.
 
     @swagger_auto_schema(operation_id='Create a New Vendor', operation_description='Vendor create endpoint',
                          request_body=VendorCreateSerializer,

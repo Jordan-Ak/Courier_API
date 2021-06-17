@@ -1,3 +1,4 @@
+from collections import namedtuple
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
@@ -33,7 +34,7 @@ def tag_delete(object):
     object.delete()
 
 
-def vendor_get_name(name) -> Vendor:
+def vendor_get_name(name) -> Vendor: #fetch vendor object by name
     try:
         vendor = Vendor.objects.get(name = name)
     except Vendor.DoesNotExist:
@@ -41,7 +42,7 @@ def vendor_get_name(name) -> Vendor:
     return vendor
         
 
-def vendor_get_id(id) -> Vendor:
+def vendor_get_id(id) -> Vendor: #Fetch vendor object by id
     try:
         vendor = Vendor.objects.get(id = id)
     
@@ -49,7 +50,7 @@ def vendor_get_id(id) -> Vendor:
         raise serializers.ValidationError(_('Vendor does not exist.'))
     return vendor
 
-def vendor_get_user(user) -> Vendor:
+def vendor_get_user(user) -> Vendor: #Fetch vendor object by user
     try:
         vendor = Vendor.objects.get(user = user)
     except Vendor.DoesNotExist:
@@ -64,7 +65,7 @@ def vendor_delete(object) -> None:
 
 def vendor_create(user,**kwargs) -> Vendor:
     
-    for tag in kwargs.get('tags', ''):
+    for tag in kwargs.get('tags', ''): #Validation for if tag exists
         tag_id = tag_get_id(tag['id'])  
         if not tag_id:
             raise serializers.ValidationError(_('Tag does not exist.'))
@@ -78,9 +79,9 @@ def vendor_create(user,**kwargs) -> Vendor:
                                           users = user,)
     new_vendor.save()
     
-    for tag in kwargs.get('tags', ''):
+    for tag in kwargs.get('tags', ''): #code for adding tag, this is syntax code for many to many relation
         tag_obj = tag_get_id(tag['id'])
-        new_vendor.tags.add(tag_obj.id)   #Check this why add '.id'
+        new_vendor.tags.add(tag_obj.id)   #Check this why add '.id' done tick
     
     #Below code is for creating an appropriate Product category for the service
     product_name = None
@@ -144,7 +145,7 @@ def schedule_create(user_id,**kwargs):
 
     weekday = kwargs['weekday']
     schedule_duplicate_check = Schedule.objects.filter(vendor = vendor).filter(weekday =weekday)
-    if schedule_duplicate_check:
+    if schedule_duplicate_check: #Validation if the weekday already exists for this vendor
         raise serializers.ValidationError(_('You have already created a Schedule for this day'))
 
     schedule = Schedule.objects.create(vendor =vendor, weekday = weekday,
@@ -153,7 +154,7 @@ def schedule_create(user_id,**kwargs):
                             )
       
     schedule.save()
-    schedule.vendor_status()
+    schedule.vendor_status() #This code runs to save if vendors are closed or open for particular day
     return schedule
 
 def schedule_update(instance,**validated_data):
@@ -190,16 +191,16 @@ def product_category_create(vendor,user_id, **kwargs):
     return product_cat
 
 def product_category_update(instance,vendor, user_id,**kwargs):
-    if not instance:
+    if not instance: #This means the instance didn't exist at a point in the flow
         raise serializers.ValidationError(_('This product category does not exist.'))
     
     vendor_obj = vendor_get_id(vendor)
-    if vendor_obj.users.id != user_id:
+    if vendor_obj.users.id != user_id: #Validation if user owns vendor
         raise serializers.ValidationError(_('This user cannot update this Vendor'))
 
     default_product_cat = ProductCategory.objects.filter(vendor = vendor).order_by('date_created')[0]
     
-    if instance == default_product_cat:
+    if instance == default_product_cat: #This code is to protect default vendor categories made
         raise serializers.ValidationError(_('You cannot rename default categories'))
 
     instance.name = kwargs.get('name', instance.name)
@@ -215,7 +216,7 @@ def product_category_delete(product_obj, user_id):
     
     default_product_cat = ProductCategory.objects.filter(vendor = vendor).order_by('date_created')[0]
     
-    if product_obj == default_product_cat:
+    if product_obj == default_product_cat: #code to protect default categories created
         raise serializers.ValidationError(_('You cannot delete default categories'))
 
     product_obj.delete()
@@ -223,7 +224,7 @@ def product_category_delete(product_obj, user_id):
 def product_category_ven_cat_filter(vendor, product_cat):
     try:
         object = ProductCategory.objects.filter(vendor = vendor).filter(slug_name = product_cat)
-    except ValidationError:
+    except ValidationError: 
         return None
     if not object:
         return None
