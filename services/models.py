@@ -3,6 +3,7 @@ from datetime import timezone
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models.aggregates import Max
+from django.db.models.deletion import DO_NOTHING
 from common.models import BaseModel
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
@@ -146,8 +147,8 @@ class ProductCategory(BaseModel, models.Model):
         self.slug_name = slugify(self.name)
         self.save()
     
-def products_category_set(self):
-    return ProductCategory.objects.filter(vendor = self.vendor).order_by('date_created')[0]
+#def products_category_set(self):
+ #   return ProductCategory.objects.filter(vendor = self.vendor).order_by('date_created')[0]
 
 class Product(BaseModel, models.Model):
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
@@ -155,7 +156,7 @@ class Product(BaseModel, models.Model):
     detail = models.CharField(_('Product Detail'),max_length = 1000, null = True)
     price = models.DecimalField(_('Product Price'),max_digits=10, decimal_places=2,)
     looks = models.ImageField(_('Product Image'),upload_to=product_directory_path, null = True)
-    product_category = models.ForeignKey(ProductCategory, on_delete=models.SET(products_category_set),)
+    product_category = models.ForeignKey(ProductCategory, on_delete=DO_NOTHING, null = True)
     slug_name = models.SlugField(null = True, db_index = False)
 
     def generate_slug_name(self):

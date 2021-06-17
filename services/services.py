@@ -263,6 +263,7 @@ def product_create(vendor_obj, **kwargs):
                            product_category = product_cat_obj, vendor = vendor_obj)
                            
     product.save()
+    product.generate_slug_name()
     return product
 
 def product_update(instance, **kwargs):
