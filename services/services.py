@@ -82,6 +82,24 @@ def vendor_create(user,**kwargs) -> Vendor:
         tag_obj = tag_get_id(tag['id'])
         new_vendor.tags.add(tag_obj.id)   #Check this why add '.id'
     
+    #Below code is for creating an appropriate Product category for the service
+    product_name = None
+    service = kwargs.get('service')
+    if service == 'REST':
+        product_cat_name = 'Foods and Drinks'
+    if service == 'PARTY':
+        product_cat_name = 'Alcohol and Chops'
+    if service == 'PHAR':
+        product_cat_name = 'Medication'
+    if service == 'GRO':
+        product_cat_name = 'Groceries'
+    if service == 'CLOTH':
+        product_cat_name = 'Clothing'
+   
+    product_cat = ProductCategory.objects.create(name = product_cat_name, vendor=new_vendor)
+    product_cat.save()
+    product_cat.generate_slug_name()
+    
     return new_vendor
 
 def vendor_retrieve_validation(vendor, user_id):
@@ -179,16 +197,27 @@ def product_category_update(instance,vendor, user_id,**kwargs):
     if vendor_obj.users.id != user_id:
         raise serializers.ValidationError(_('This user cannot update this Vendor'))
 
+    default_product_cat = ProductCategory.objects.filter(vendor = vendor).order_by('date_created')[0]
+    
+    if instance == default_product_cat:
+        raise serializers.ValidationError(_('You cannot rename default categories'))
+
     instance.name = kwargs.get('name', instance.name)
     instance.save()
     instance.generate_slug_name()
     return instance
 
 def product_category_delete(product_obj, user_id):
-    vendor_user = product_obj.vendor.user
+    vendor_user = product_obj.vendor.users
+    vendor = product_obj.vendor.id
     if vendor_user.id != user_id:
         raise serializers.ValidationError(_('This user cannot make changes to this vendor'))
     
+    default_product_cat = ProductCategory.objects.filter(vendor = vendor).order_by('date_created')[0]
+    
+    if product_obj == default_product_cat:
+        raise serializers.ValidationError(_('You cannot delete default categories'))
+
     product_obj.delete()
 
 def product_category_ven_cat_filter(vendor, product_cat):
