@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import ProductCategory, Product, Schedule, Tag, Vendor
+from .models import ProductCategory, Product, Rating, Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -303,3 +303,43 @@ def product_ven_pro_cat_slug_filter(vendor, product_cat, product_name):
         raise serializers.ValidationError(_('This product does not exist in this category or vendor'))
     
     return product_obj
+
+def rating_create(vendor, user_id, **kwargs):
+    vendor_obj = vendor_get_id(vendor)
+    user_obj = user_retrieve_pk(user_id)
+    if vendor_obj.users.id == user_id:
+        raise serializers.ValidationError(_('You cannot rate your own vendor.'))
+
+    rating_obj = Rating.objects.create(vendor_rated = vendor_obj,
+                                     who_rated = user_obj, rating = kwargs.get('rating',''))
+    
+    rating_obj.save()
+    return rating_obj
+
+def rating_update(instance, **kwargs):
+    if not instance: #This means the instance didn't exist at a point in the flow
+        raise serializers.ValidationError(_('This product category does not exist.'))
+    
+    instance.rating = kwargs.get('rating', instance.rating)
+    instance.save()
+    return instance
+
+def rating_delete(object):
+    object.delete()
+
+    
+
+
+def rating_get_id(rating_id):
+    try:
+        rating = Rating.objects.get(id = rating_id)
+    
+    except Rating.DoesNotExist:
+        raise serializers.ValidationError(_('This object does not exist.'))
+    
+    return rating
+
+def rating_user_validation(rating, user):
+    if rating.who_rated.id != user.id or user.is_staff != True:
+        raise serializers.ValidationError(_('This endpoint is unavailable to user'))
+

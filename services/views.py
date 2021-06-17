@@ -1,7 +1,7 @@
 from services.services import (product_category_create, product_category_delete,
                                product_category_update, product_category_ven_cat_filter, 
                                product_category_ven_filter, product_create, product_delete, product_update, 
-                               product_user_validation, product_ven_pro_cat_slug_filter, schedule_create, 
+                               product_user_validation, product_ven_pro_cat_slug_filter, rating_create, rating_delete, rating_get_id, rating_update, rating_user_validation, schedule_create, 
                                schedule_update, schedule_vendor_day_filter, 
                                schedule_vendor_filter, vendor_create, vendor_delete, 
                                vendor_get_id, vendor_get_name, tag_create, 
@@ -10,7 +10,7 @@ from services.services import (product_category_create, product_category_delete,
 from services.serializers import (ProductCategoryCreateSerializer, ProductCategoryListSerializer,
                                   ProductCategoryRetrieveUpdateSerializer,
                                   ProductCreateSerializer, ProductListSerializer,
-                                  ProductRetrieveUpdateSerializer, ProductVendorListSerializer,
+                                  ProductRetrieveUpdateSerializer, ProductVendorListSerializer, RatingCreateSerializer, RatingListSerializer, RatingListUserSerializer, RatingRetrieveSerializer, RatingUpdateSerializer,
                                   ScheduleCreateSerializer,ScheduleListSerializer, 
                                   ScheduleRetrieveListSerializer,
                                   ScheduleRetrieveUpdateSerializer,
@@ -27,7 +27,7 @@ from rest_framework.views import Response
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from .models import Product, ProductCategory, Schedule, Vendor, Tag
+from .models import Product, ProductCategory, Rating, Schedule, Vendor, Tag
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwner
 
 class TagCreateView(APIView):
@@ -124,15 +124,16 @@ class VendorRetrieveUpdateView(APIView):
 
 
 class VendorListView(generics.ListAPIView):
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = VendorListSerializer
-    #######!!!! Remember to associate the Vendor/Service to a user or not
-    def get_queryset(self):
-        "Restricts the queryset depending on staff or not"
-        if self.request.user.is_staff != True:
-            return None
-        else:
-            return Vendor.objects.all()
+    queryset = Vendor.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.queryset
+        for query in queryset:
+            query.gen_average_vendor_rating()
+        serializer = self.serializer_class(queryset, many = True,)
+        return Response(serializer.data, status = status.HTTP_200_OK)
 
 
 class VendorDeleteView(APIView):
@@ -389,3 +390,69 @@ class ProductDeleteView(APIView):
         product_delete(product_obj)
 
         return Response({'message':'Product has been deleted successfully'}, status = status.HTTP_200_OK)
+
+
+class RatingCreateView(APIView):
+    permissions_classes = [permissions.IsAuthenticated]
+    serializer_class = RatingCreateSerializer
+
+    def post(self, request, *args, **kwargs):
+        vendor = kwargs['vendor']
+        user_id = self.request.user.id
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        rating_create(vendor, user_id,**serializer.validated_data)
+        return Response({'message':'Rating has been saved'}, status = status.HTTP_201_CREATED)
+
+
+class RatingListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = RatingListSerializer
+    queryset = Rating.objects.all()
+
+class RatingListUserView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = RatingListUserSerializer
+    queryset = Rating.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = Rating.objects.filter(who_rated = self.request.user)
+        serializer = self.serializer_class(queryset, many = True,)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class RatingRetrieveUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class_GET = RatingRetrieveSerializer
+    serializer_class_PUT = RatingUpdateSerializer
+    
+    def get(self, request, *args, **kwargs):
+        rating_id = kwargs['rating']
+        user = self.request.user
+        rating = rating_get_id(rating_id)
+        rating_user_validation(rating, user)
+        serializer = self.serializer_class_GET(rating)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        rating_id = kwargs['rating']
+        user = self.request.user
+        rating = rating_get_id(rating_id)
+        rating_user_validation(rating, user)
+        serializer = self.serializer_class_PUT(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        rating_update(rating, **serializer.validated_data)
+
+        return Response({'message':'Rating updated successfully'}, status = status.HTTP_200_OK)
+
+class RatingDeleteView(APIView):
+    permissions_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        rating_id = kwargs['rating']
+        user = self.request.user
+        rating = rating_get_id(rating_id)
+        rating_user_validation(rating, user)
+       
+        rating_delete(rating)
+        return Response({'message':'Rating for this vendor has been removed'}, status = status.HTTP_200_OK)
+

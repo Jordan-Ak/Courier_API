@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (ProductCategoryCreateView, ProductCategoryDeleteView,
                     ProductCategoryListView, ProductCategoryRetrieveUpdateView,
                     ProductCreateView, ProductDeleteView, ProductListView,
-                    ProductRetrieveUpdateView, ProductVendorListView, 
+                    ProductRetrieveUpdateView, ProductVendorListView, RatingCreateView, RatingDeleteView, RatingListUserView, RatingListView, RatingRetrieveUpdateView, 
                     ScheduleCreateView, ScheduleDeleteView, ScheduleListView,
                     ScheduleRetrieveListView, ScheduleRetrieveUpdateView, VendorCreateView, 
                     VendorListView, VendorDeleteView, 
@@ -46,5 +46,11 @@ urlpatterns=[
     path('product/retrieve/<str:vendor>/<str:product_cat>/<slug:slug_name>/',
                                         ProductRetrieveUpdateView.as_view(), name = 'product-retrieve'),
     path('product/delete/<str:vendor>/<str:product_cat>/<slug:slug_name>/',
-                                        ProductDeleteView.as_view(), name = 'product-delete'),                                    
+                                        ProductDeleteView.as_view(), name = 'product-delete'),  
+
+    path('rating/create/', RatingCreateView.as_view(), name = 'rating-create'),
+    path('rating/list/admin', RatingListView.as_view(), name = 'rating-list-admin'),
+    path('rating/list/user/', RatingListUserView.as_view(), name = 'rating-list-user'),
+    path('rating/retrieve/<str:rating>/', RatingRetrieveUpdateView.as_view(), name = 'rating-update'),
+    path('rating/delete/<str:rating>/', RatingDeleteView.as_view(), name = 'rating-delete'),                                  
 ]

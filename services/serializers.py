@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from .models import Product, ProductCategory, Tag, Vendor, vendor_directory_path, Schedule
+from .models import Product, ProductCategory, Rating, Tag, Vendor, vendor_directory_path, Schedule
 
 class TagCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -136,3 +136,34 @@ class ProductRetrieveUpdateSerializer(serializers.Serializer):
     looks = serializers.ImageField(required = False)
     product_category = ProductCategoryProductSerializer(required = False)
     vendor = VendorProductSerializer(read_only = True)
+
+class VendorRatingSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+
+class UserRatingSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+
+class RatingCreateSerializer(serializers.Serializer):
+    vendor_rated = VendorRatingSerializer()
+    who_rated = UserRatingSerializer()
+    rating = serializers.IntegerField()
+
+class RatingListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rating
+        fields = ('vendor_rated', 'who_rated', 'rating')
+
+class RatingListUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rating
+        fields = ('vendor_rated', 'who_rated', 'rating',)
+
+class RatingRetrieveSerializer(serializers.Serializer):
+    vendor_rated = VendorRatingSerializer()
+    who_rated = UserRatingSerializer()
+    rating = serializers.IntegerField()
+
+class RatingUpdateSerializer(serializers.Serializer):
+    rating = serializers.IntegerField

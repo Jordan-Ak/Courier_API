@@ -1,12 +1,14 @@
 import datetime
 from datetime import timezone
 from django.db import models
+from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
-from django.db.models.aggregates import Max
+from django.db.models import Avg
 from django.db.models.deletion import DO_NOTHING
 from common.models import BaseModel
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
+
 
 # Create your models here.
 
@@ -55,6 +57,14 @@ class Vendor(BaseModel, models.Model):
     cover = models.ImageField(_('Vendor image cover'),upload_to=vendor_directory_path)
     rating = models.DecimalField(_('Rating'),decimal_places=1, editable=False, max_digits = 2, null = True)
     users = models.ForeignKey(get_user_model(), on_delete = models.SET_DEFAULT, default = '143d24de-78b8-478a-919b-1022059cc2ec')
+
+    def gen_average_vendor_rating(self):
+        rating_queryset = Rating.objects.filter(vendor_rated = self.id)
+        if not rating_queryset:
+            return None
+        average_rating = rating_queryset.aggregate(average_rating=Avg('rating'))
+        self.rating =  average_rating['average_rating']
+        self.save()
 
     def __str__(self):
         return self.name.title()
@@ -166,8 +176,14 @@ class Product(BaseModel, models.Model):
     def __str__(self):
         return self.name.title()
 
-class Ratings(BaseModel, models.Model):
-    pass
+class Rating(BaseModel, models.Model):
+    vendor_rated = models.ForeignKey(Vendor, on_delete = models.CASCADE, related_name = 'user_rating')
+    who_rated = models.ForeignKey(get_user_model(), on_delete = models.CASCADE)
+    rating = models.PositiveSmallIntegerField(validators = [MaxValueValidator(5)])
 
-
+    class Meta: #This constraint restricts users to have only one rating per book
+        unique_together = ('who_rated', 'vendor_rated',)
+    
+    def __str__(self):
+        return self.vendor_rated.name.title() + ', ' + self.who_rated.email
 
