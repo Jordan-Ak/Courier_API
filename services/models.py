@@ -152,6 +152,7 @@ class ProductCategory(BaseModel, models.Model):
     name = models.CharField(_('Product category name'),max_length = 50,)
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
     slug_name = models.SlugField(null = True, db_index=False)
+    #method set_products_to_default_category lies in signals
 
     def generate_slug_name(self):
         self.slug_name = slugify(self.name)
@@ -186,4 +187,39 @@ class Rating(BaseModel, models.Model):
     
     def __str__(self):
         return self.vendor_rated.name.title() + ', ' + self.who_rated.email
+
+
+class CustomerOrder(BaseModel, models.Model):
+    product = models.ForeignKey(Product, on_delete = DO_NOTHING)
+    quantity = models.IntegerField(default = 1)
+    ordered = models.BooleanField(default = False)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
+    user = models.ForeignKey(get_user_model(), on_delete = models.CASCADE)
+    vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE)
+
+    def gen_total_price(self):
+        self.total_price = self.product.price * self.quantity
+        self.save()
+    
+    def __str__(self):
+        return f'{self.product.name}, {self.user}'
+
+
+class CustomerCart(BaseModel, models.Model):
+    products = models.ManyToManyField(CustomerOrder)
+    ordered = models.BooleanField(default = False)
+    ordered_time = models.TimeField(null = True)
+    delivered_time = models.TimeField(null = True)
+    final_price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
+    user = models.ForeignKey(get_user_model(), on_delete = models.CASCADE,)
+
+    def gen_final_price(self):
+        final_price = 0
+        for product in self.products.all():
+            final_price += product.get_total_price()
+        self.fianl_price = final_price
+        self.save()
+
+    def __str__(self):
+        return f'{self.user}, {self.date_created}'
 

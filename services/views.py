@@ -1,16 +1,22 @@
-from services.services import (product_category_create, product_category_delete,
+from services.services import (customer_cart_get, customer_order_create, product_category_create, product_category_delete,
                                product_category_update, product_category_ven_cat_filter, 
                                product_category_ven_filter, product_create, product_delete, product_update, 
-                               product_user_validation, product_ven_pro_cat_slug_filter, rating_create, rating_delete, rating_get_id, rating_update, rating_user_validation, schedule_create, 
+                               product_user_validation, product_ven_pro_cat_slug_filter,
+                               rating_create, rating_delete, rating_get_id,
+                               rating_update, rating_user_validation, schedule_create, 
                                schedule_update, schedule_vendor_day_filter, 
                                schedule_vendor_filter, vendor_create, vendor_delete, 
                                vendor_get_id, vendor_get_name, tag_create, 
                                tag_delete, vendor_get_user, vendor_retrieve_validation, vendor_update)
 
-from services.serializers import (ProductCategoryCreateSerializer, ProductCategoryListSerializer,
+from services.serializers import (CustomerCartRetrieveUpdateSerializer, CustomerOrderCreateSerializer,
+                                  ProductCategoryCreateSerializer, ProductCategoryListSerializer,
                                   ProductCategoryRetrieveUpdateSerializer,
                                   ProductCreateSerializer, ProductListSerializer,
-                                  ProductRetrieveUpdateSerializer, ProductVendorListSerializer, RatingCreateSerializer, RatingListSerializer, RatingListUserSerializer, RatingRetrieveSerializer, RatingUpdateSerializer,
+                                  ProductRetrieveUpdateSerializer, ProductVendorListSerializer,
+                                  RatingCreateSerializer, RatingListSerializer,
+                                  RatingListUserSerializer, RatingRetrieveSerializer,
+                                  RatingUpdateSerializer,
                                   ScheduleCreateSerializer,ScheduleListSerializer, 
                                   ScheduleRetrieveListSerializer,
                                   ScheduleRetrieveUpdateSerializer,
@@ -124,7 +130,7 @@ class VendorRetrieveUpdateView(APIView):
 
 
 class VendorListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = VendorListSerializer
     queryset = Vendor.objects.all()
 
@@ -455,4 +461,33 @@ class RatingDeleteView(APIView):
        
         rating_delete(rating)
         return Response({'message':'Rating for this vendor has been removed'}, status = status.HTTP_200_OK)
+
+class CustomerOrderCreateView(APIView):
+    permissions_classes = [permissions.AllowAny]
+    serializer_class = CustomerOrderCreateSerializer
+
+    def post(self, request, *args, **kwargs):
+        user_id = self.request.user.id
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        customer_order_create(user_id,**serializer.validated_data)
+        return Response({'message':'Order added to cart'}, status = status.HTTP_201_CREATED)
+
+
+class CustomerCartRetrieveUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomerCartRetrieveUpdateSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        cart = customer_cart_get(user)
+        serializer = self.serializer_class(cart)
+        return Response({'message':'Cart retrieval successful'}, status = status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):
+        user = self.request.user
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception= True)
+        customer_cart_update(user,**serializer.validated_data)
+        return Response({'message':'Cart updated successfully'},status = status.HTTP_200_OK)
 

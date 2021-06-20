@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import ProductCategory, Product, Rating, Schedule, Tag, Vendor
+from .models import CustomerCart, CustomerOrder, ProductCategory, Product, Rating, Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -249,6 +249,13 @@ def product_user_validation(vendor, user_id):
         raise serializers.ValidationError(_('This user is not authorized to view this endpoint.'))
     
 
+def product_get_id(id) -> Product:
+    try:
+        product_object= Product.objects.get(id = id)
+    except Product.DoesNotExist:
+        raise serializers.ValidationError(_('This product does not exist.'))
+    return product_object
+
 def product_create(vendor_obj, **kwargs):
     product_categories_obj = ProductCategory.objects.filter(vendor = vendor_obj.id)
     product_category_dict = kwargs['product_category']
@@ -343,3 +350,60 @@ def rating_user_validation(rating, user):
     if rating.who_rated.id != user.id or user.is_staff != True:
         raise serializers.ValidationError(_('This endpoint is unavailable to user'))
 
+def customer_cart_get(user):
+    exist_cart = CustomerCart.objects.filter(user = user, ordered = False)
+    if exist_cart:
+        return exist_cart[0]
+    else:
+        return None
+        #customer_cart_create(user, product)
+
+def customer_order_create(user_id,**kwargs):
+    user = user_retrieve_pk(user_id)
+    product = kwargs.get('product')
+    vendor = kwargs['product']['vendor']
+    ordered = False
+
+    customer_order = CustomerOrder.objects.create(product = product,
+                                                 quantity = kwargs.get('quantity','1'),
+                                                 ordered = ordered, user = user,
+                                                 vendor = vendor)
+    customer_order.save()
+    customer_order.gen_total_price()
+
+    existing_cart = customer_cart_get(user)
+    if existing_cart:
+        customer_cart_add(existing_cart, product)
+    else:
+        customer_cart_create(user, product)
+    
+    
+    return customer_order
+
+#def customer_cart_get(user):
+    #CustomerCart.objects.filter(user = user).filter(ordered = False)
+
+def customer_cart_create(user, product):
+    customer_cart = CustomerCart.objects.create(ordered = False, ordered_time = None,
+                                                 delivered_time = None, final_price = None, user = user)
+    customer_cart.save()
+    customer_cart.products.add(product)
+
+def customer_cart_update(user,**kwargs):
+    product_update = kwargs.get('products','')
+    customer_cart = customer_cart_get(user)
+    ######YOU have to duplicate functions on the customer order as well
+    if customer_cart.products != product_update:
+        for product in customer_cart.products.all():
+            customer_cart.remove(product)
+        
+        for product in product_update:
+            customer_cart.products.add(product)
+    
+    
+    customer_cart.gen_final_price()
+   
+     
+   
+def customer_cart_add(customer_cart_obj, product):
+    customer_cart_obj.products.add(product)
