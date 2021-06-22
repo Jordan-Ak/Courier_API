@@ -1,6 +1,6 @@
 from services.views import TagCreateView
 from django.urls import path
-from .views import (ProductCategoryCreateView, ProductCategoryDeleteView,
+from .views import (CustomerCartCreateView, CustomerCartDeleteView, CustomerCartRetrieveView, CustomerCartUserListView, CustomerCartVendorListView, ProductCategoryCreateView, ProductCategoryDeleteView,
                     ProductCategoryListView, ProductCategoryRetrieveUpdateView,
                     ProductCreateView, ProductDeleteView, ProductListView,
                     ProductRetrieveUpdateView, ProductVendorListView, RatingCreateView, RatingDeleteView, RatingListUserView, RatingListView, RatingRetrieveUpdateView, 
@@ -40,17 +40,26 @@ urlpatterns=[
                                                             name = 'product-cat-update'),
     path('product_cat/delete/<str:vendor>/<slug:slug_name>/', ProductCategoryDeleteView.as_view(),
                                                             name ='product-cat-delete',),
+    #Urls for Products
     path('product/create/<str:vendor>/', ProductCreateView.as_view(), name = 'product-create'),
     path('product/list', ProductListView.as_view(), name = 'product-list'),
     path('product/list/<str:vendor>/', ProductVendorListView.as_view(), name = 'product-vendor-list'),
     path('product/retrieve/<str:vendor>/<str:product_cat>/<slug:slug_name>/',
                                         ProductRetrieveUpdateView.as_view(), name = 'product-retrieve'),
     path('product/delete/<str:vendor>/<str:product_cat>/<slug:slug_name>/',
-                                        ProductDeleteView.as_view(), name = 'product-delete'),  
+                                        ProductDeleteView.as_view(), name = 'product-delete'),
+    #Urls for Ratings  
 
     path('rating/create/', RatingCreateView.as_view(), name = 'rating-create'),
     path('rating/list/admin', RatingListView.as_view(), name = 'rating-list-admin'),
     path('rating/list/user/', RatingListUserView.as_view(), name = 'rating-list-user'),
     path('rating/retrieve/<str:rating>/', RatingRetrieveUpdateView.as_view(), name = 'rating-update'),
     path('rating/delete/<str:rating>/', RatingDeleteView.as_view(), name = 'rating-delete'),                                  
+
+    #Urls for Cart
+    path('cart/create/', CustomerCartCreateView.as_view(), name = 'cart-create',),
+    path('cart/vendor/list/', CustomerCartVendorListView.as_view(), name = 'cart-vendor-list',),
+    path('cart/list/', CustomerCartUserListView.as_view(), name = 'cart-list',),
+    path('cart/update/<str:cart>/', CustomerCartRetrieveView.as_view(), name = 'cart-retrieve-update'),
+    path('cart/delete/<str:cart>/', CustomerCartDeleteView.as_view(), name = 'cart-delete'),
 ]

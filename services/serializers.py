@@ -194,7 +194,7 @@ class CustomerCartVendorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerCart
         fields = ('product', 'quantity', 'total_price','ordered','ordered_time',
-                  'delivered_time','vendor','user','date_created')
+                  'delivered_time','vendor','date_created')
 
 class CustomerCartUserListSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only = True)
