@@ -430,7 +430,7 @@ class RatingListUserView(generics.ListAPIView):
 class RatingRetrieveUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class_GET = RatingRetrieveSerializer
-    serializer_class_PUT = RatingUpdateSerializer
+    serializer_class = RatingUpdateSerializer
     
     def get(self, request, *args, **kwargs):
         rating_id = kwargs['rating']
@@ -445,9 +445,9 @@ class RatingRetrieveUpdateView(APIView):
         user = self.request.user
         rating = rating_get_id(rating_id)
         rating_user_validation(rating, user)
-        serializer = self.serializer_class_PUT(data = request.data)
+        serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception=True)
-        rating_update(rating, **serializer.validated_data)
+        rating_update(rating, user, **serializer.validated_data)
 
         return Response({'message':'Rating updated successfully'}, status = status.HTTP_200_OK)
 
@@ -467,12 +467,14 @@ class CustomerCartCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated,]
     serializer_class = CustomerCartCreateSerializer
 
+    ####Code That checks schedule before initiating a product
     def post(self, request, *args, **kwargs):
         user = self.request.user
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception=True)
-        cart_product_validation(user, **serializer.validated_data)
-        customer_cart_create(user, **serializer.validated_data)
+        cart = cart_product_validation(user, **serializer.validated_data)
+        if not cart:
+            customer_cart_create(user, **serializer.validated_data)
         return Response({'message':'Product Added to cart'}, status = status.HTTP_200_OK)
 
 class CustomerCartVendorListView(generics.ListAPIView):

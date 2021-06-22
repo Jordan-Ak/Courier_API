@@ -144,8 +144,8 @@ class UserRatingSerializer(serializers.Serializer):
     id = serializers.UUIDField()
 
 class RatingCreateSerializer(serializers.Serializer):
-    vendor_rated = VendorRatingSerializer()
-    who_rated = UserRatingSerializer()
+    vendor_rated = VendorRatingSerializer(read_only = True)
+    who_rated = UserRatingSerializer(read_only = True)
     rating = serializers.IntegerField()
 
 class RatingListSerializer(serializers.ModelSerializer):
@@ -166,27 +166,27 @@ class RatingRetrieveSerializer(serializers.Serializer):
     rating = serializers.IntegerField()
 
 class RatingUpdateSerializer(serializers.Serializer):
-    rating = serializers.IntegerField
+    rating = serializers.IntegerField()
 
 
 class ProductCartSerializer(serializers.Serializer):
     id = serializers.UUIDField()
-    name = serializers.CharField()
-    price = serializers.DecimalField(max_digits=10, decimal_places=2,)
-    looks = serializers.ImageField()
+    #name = serializers.CharField()
+    #price = serializers.DecimalField(max_digits=10, decimal_places=2,)
+    #looks = serializers.ImageField()
 
 class VendorCartSerializer(serializers.Serializer):
     id = serializers.UUIDField()
-    name = serializers.CharField()
+    #name = serializers.CharField()
 
 class CustomerCartCreateSerializer(serializers.Serializer):
     product = ProductCartSerializer()
-    quantity = serializers.IntegerField()
+    quantity = serializers.IntegerField(default = 1)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True)
-    ordered = serializers.BooleanField(default = False,)
+    ordered = serializers.BooleanField(default = False, read_only = True)
     ordered_time =serializers.TimeField(read_only = True)
     delivered_time = serializers.TimeField(read_only = True)
-    vendor = VendorCartSerializer()
+    vendor = VendorCartSerializer(read_only = True)
     user = serializers.CharField(read_only = True)
 
 class CustomerCartVendorListSerializer(serializers.ModelSerializer):

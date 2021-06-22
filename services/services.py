@@ -52,7 +52,7 @@ def vendor_get_id(id) -> Vendor: #Fetch vendor object by id
 
 def vendor_get_user(user) -> Vendor: #Fetch vendor object by user
     try:
-        vendor = Vendor.objects.get(user = user)
+        vendor = Vendor.objects.get(users = user)
     except Vendor.DoesNotExist:
         raise serializers.ValidationError(_('This user has no associated Vendor'))
 
@@ -311,31 +311,46 @@ def product_ven_pro_cat_slug_filter(vendor, product_cat, product_name):
     
     return product_obj
 
+def rating_exist(user, vendor):
+    rating = Rating.objects.filter(who_rated = user).filter(vendor_rated = vendor)
+    if rating:
+        return rating
+
+
 def rating_create(vendor, user_id, **kwargs):
     vendor_obj = vendor_get_id(vendor)
     user_obj = user_retrieve_pk(user_id)
+    rating = kwargs.get('rating', '')
+    if rating > 5 or rating < 0:
+        raise serializers.ValidationError(_('Rating must be in range 0 - 5'))
     if vendor_obj.users.id == user_id:
         raise serializers.ValidationError(_('You cannot rate your own vendor.'))
 
-    rating_obj = Rating.objects.create(vendor_rated = vendor_obj,
+    exist_rating = rating_exist(user_obj, vendor_obj)
+    if exist_rating:
+        rating_update(exist_rating[0], **kwargs)
+    else:
+        rating_obj = Rating.objects.create(vendor_rated = vendor_obj,
                                      who_rated = user_obj, rating = kwargs.get('rating',''))
     
-    rating_obj.save()
-    return rating_obj
+        rating_obj.save()
+        return rating_obj
 
-def rating_update(instance, **kwargs):
+def rating_update(instance, user, **kwargs):
     if not instance: #This means the instance didn't exist at a point in the flow
-        raise serializers.ValidationError(_('This product category does not exist.'))
+        raise serializers.ValidationError(_('This rating does not exist.'))
+    if instance.who_rated != user or user.is_staff == False:
+        raise serializers.ValidationError(_('This user cannot access this endpoint'))
+    rating = kwargs.get('rating', instance.rating)
+    if  rating> 5 or rating < 0:
+        raise serializers.ValidationError(_('Rating must be in range 0 - 5'))
     
-    instance.rating = kwargs.get('rating', instance.rating)
+    instance.rating = rating
     instance.save()
     return instance
 
 def rating_delete(object):
     object.delete()
-
-    
-
 
 def rating_get_id(rating_id):
     try:
@@ -371,20 +386,20 @@ def customer_cart_ordered_user_filter(user):
 def cart_product_validation(user, **kwargs):
     product_select = kwargs.get('product','')
     current_cart = CustomerCart.objects.filter(user = user).filter(ordered = False).filter(
-                                                product = product_select)
+                                                product = product_select['id'])
     if current_cart:
         cart = current_cart[0]
         cart.quantity += 1
         cart.save()
+        cart.gen_total_price()
+    return cart
 
 def cart_user_validation(user, product):
     if user.is_staff or product.user == user:
         pass
     else:
         raise serializers.ValidationError(_('This user does not own this cart.'))
-        
-        
-            
+                 
 
 def customer_cart_create(user, **kwargs):
     product_obj = kwargs.get('product','')

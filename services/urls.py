@@ -50,7 +50,7 @@ urlpatterns=[
                                         ProductDeleteView.as_view(), name = 'product-delete'),
     #Urls for Ratings  
 
-    path('rating/create/', RatingCreateView.as_view(), name = 'rating-create'),
+    path('rating/create/<str:vendor>/', RatingCreateView.as_view(), name = 'rating-create'),
     path('rating/list/admin', RatingListView.as_view(), name = 'rating-list-admin'),
     path('rating/list/user/', RatingListUserView.as_view(), name = 'rating-list-user'),
     path('rating/retrieve/<str:rating>/', RatingRetrieveUpdateView.as_view(), name = 'rating-update'),
