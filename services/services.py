@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import CustomerCart, CustomerOrder, ProductCategory, Product, Rating, Schedule, Tag, Vendor
+from .models import CustomerCart, ProductCategory, Product, Rating, Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -356,54 +356,55 @@ def customer_cart_get(user):
         return exist_cart[0]
     else:
         return None
-        #customer_cart_create(user, product)
 
-def customer_order_create(user_id,**kwargs):
-    user = user_retrieve_pk(user_id)
-    product = kwargs.get('product')
-    vendor = kwargs['product']['vendor']
-    ordered = False
+def customer_cart_get_id(id):
+    try:
+       customer_cart =  CustomerCart.objects.get(id = id)
+    except CustomerCart.DoesNotExist:
+        raise serializers.ValidationError(_('Requested cart does not exist.'))
+    return customer_cart    
 
-    customer_order = CustomerOrder.objects.create(product = product,
-                                                 quantity = kwargs.get('quantity','1'),
-                                                 ordered = ordered, user = user,
-                                                 vendor = vendor)
-    customer_order.save()
-    customer_order.gen_total_price()
+def customer_cart_ordered_user_filter(user):
+    products = CustomerCart.objects.filter(ordered = False).filter(user = user)
+    return products
 
-    existing_cart = customer_cart_get(user)
-    if existing_cart:
-        customer_cart_add(existing_cart, product)
+def cart_product_validation(user, **kwargs):
+    product_select = kwargs.get('product','')
+    current_cart = CustomerCart.objects.filter(user = user).filter(ordered = False).filter(
+                                                product = product_select)
+    if current_cart:
+        cart = current_cart[0]
+        cart.quantity += 1
+        cart.save()
+
+def cart_user_validation(user, product):
+    if user.is_staff or product.user == user:
+        pass
     else:
-        customer_cart_create(user, product)
-    
-    
-    return customer_order
-
-#def customer_cart_get(user):
-    #CustomerCart.objects.filter(user = user).filter(ordered = False)
-
-def customer_cart_create(user, product):
-    customer_cart = CustomerCart.objects.create(ordered = False, ordered_time = None,
-                                                 delivered_time = None, final_price = None, user = user)
-    customer_cart.save()
-    customer_cart.products.add(product)
-
-def customer_cart_update(user,**kwargs):
-    product_update = kwargs.get('products','')
-    customer_cart = customer_cart_get(user)
-    ######YOU have to duplicate functions on the customer order as well
-    if customer_cart.products != product_update:
-        for product in customer_cart.products.all():
-            customer_cart.remove(product)
+        raise serializers.ValidationError(_('This user does not own this cart.'))
         
-        for product in product_update:
-            customer_cart.products.add(product)
-    
-    
-    customer_cart.gen_final_price()
-   
-     
-   
-def customer_cart_add(customer_cart_obj, product):
-    customer_cart_obj.products.add(product)
+        
+            
+
+def customer_cart_create(user, **kwargs):
+    product_obj = kwargs.get('product','')
+    product = product_get_id(product_obj['id'])
+    vendor = product.vendor
+
+    customer_cart = CustomerCart.objects.create(product = product, quantity = kwargs.get('quantity', 1),
+                                                ordered = False, vendor = vendor, user = user)
+    customer_cart.save()
+    customer_cart.gen_total_price()
+    return customer_cart
+
+def customer_cart_update(instance, **kwargs):
+    if not instance:
+        raise serializers.ValidationError(_('This cart is empty.'))
+
+    instance.quantity = kwargs.get('quantity', instance.quantity)
+    instance.save()
+    instance.gen_total_price()
+    return instance
+
+def customer_cart_delete(object):
+    object.delete()

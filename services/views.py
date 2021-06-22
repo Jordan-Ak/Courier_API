@@ -1,4 +1,5 @@
-from services.services import (customer_cart_get, customer_order_create, product_category_create, product_category_delete,
+from services.services import (cart_product_validation, cart_user_validation, customer_cart_create, customer_cart_delete, customer_cart_get, customer_cart_get_id, customer_cart_ordered_user_filter, customer_cart_update, 
+                               product_category_create, product_category_delete,
                                product_category_update, product_category_ven_cat_filter, 
                                product_category_ven_filter, product_create, product_delete, product_update, 
                                product_user_validation, product_ven_pro_cat_slug_filter,
@@ -9,7 +10,7 @@ from services.services import (customer_cart_get, customer_order_create, product
                                vendor_get_id, vendor_get_name, tag_create, 
                                tag_delete, vendor_get_user, vendor_retrieve_validation, vendor_update)
 
-from services.serializers import (CustomerCartRetrieveUpdateSerializer, CustomerOrderCreateSerializer,
+from services.serializers import (CustomerCartCreateSerializer, CustomerCartUserListSerializer, CustomerCartUserRetrieveSerializer, CustomerCartVendorListSerializer,
                                   ProductCategoryCreateSerializer, ProductCategoryListSerializer,
                                   ProductCategoryRetrieveUpdateSerializer,
                                   ProductCreateSerializer, ProductListSerializer,
@@ -33,7 +34,7 @@ from rest_framework.views import Response
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from .models import Product, ProductCategory, Rating, Schedule, Vendor, Tag
+from .models import CustomerCart, Product, ProductCategory, Rating, Schedule, Vendor, Tag
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwner
 
 class TagCreateView(APIView):
@@ -451,7 +452,7 @@ class RatingRetrieveUpdateView(APIView):
         return Response({'message':'Rating updated successfully'}, status = status.HTTP_200_OK)
 
 class RatingDeleteView(APIView):
-    permissions_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         rating_id = kwargs['rating']
@@ -462,32 +463,84 @@ class RatingDeleteView(APIView):
         rating_delete(rating)
         return Response({'message':'Rating for this vendor has been removed'}, status = status.HTTP_200_OK)
 
-class CustomerOrderCreateView(APIView):
-    permissions_classes = [permissions.AllowAny]
-    serializer_class = CustomerOrderCreateSerializer
+class CustomerCartCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated,]
+    serializer_class = CustomerCartCreateSerializer
 
     def post(self, request, *args, **kwargs):
-        user_id = self.request.user.id
+        user = self.request.user
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception=True)
-        customer_order_create(user_id,**serializer.validated_data)
-        return Response({'message':'Order added to cart'}, status = status.HTTP_201_CREATED)
+        cart_product_validation(user, **serializer.validated_data)
+        customer_cart_create(user, **serializer.validated_data)
+        return Response({'message':'Product Added to cart'}, status = status.HTTP_200_OK)
 
-
-class CustomerCartRetrieveUpdateView(APIView):
+class CustomerCartVendorListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = CustomerCartRetrieveUpdateSerializer
+    serializer_class = CustomerCartVendorListSerializer
+    queryset = CustomerCart.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = None
+        if self.request.user.is_staff:
+            queryset = CustomerCart.objects.all()
+        else:
+            vendor = vendor_get_user(self.request.user)
+            queryset = CustomerCart.objects.filter(vendor = vendor)
+        serializer = self.serializer_class(queryset, many = True,)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+class CustomerCartUserListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomerCartUserListSerializer
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
-        cart = customer_cart_get(user)
-        serializer = self.serializer_class(cart)
-        return Response({'message':'Cart retrieval successful'}, status = status.HTTP_200_OK)
+        products = customer_cart_ordered_user_filter(user)
+        serializer = self.serializer_class(products, many = True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    
+
+class CustomerCartRetrieveView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomerCartUserRetrieveSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        cart_id = kwargs['cart']
+        product = customer_cart_get_id(cart_id)
+        cart_user_validation(user, product)
+        serializer = self.serializer_class(product)
+        return Response(serializer.data, status = status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
         user = self.request.user
+        cart_id = kwargs['cart']
+        product = customer_cart_get_id(cart_id)
+        cart_user_validation(user, product)
         serializer = self.serializer_class(data = request.data)
-        serializer.is_valid(raise_exception= True)
-        customer_cart_update(user,**serializer.validated_data)
-        return Response({'message':'Cart updated successfully'},status = status.HTTP_200_OK)
+        serializer.is_valid(raise_exception = True)
+        customer_cart_update(product, **serializer.validated_data)
+        return Response({'message':'Cart updated Successfully'}, status = status.HTTP_200_OK)
 
+    def patch(self, request, *args, **kwargs):
+        user = self.request.user
+        cart_id = kwargs['cart']
+        product = customer_cart_get_id(cart_id)
+        cart_user_validation(user, product)
+        serializer = self.serializer_class(data = request.data, partial = True)
+        serializer.is_valid(raise_exception = True)
+        customer_cart_update(product, **serializer.validated_data)
+        return Response({'message':'Cart updated Successfully'}, status = status.HTTP_200_OK)
+
+class CustomerCartDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        cart_id = kwargs['cart']
+        product = customer_cart_get_id(cart_id)
+        cart_user_validation(user, product)
+        customer_cart_delete(product)
+        return Response({'message':'Product has been removed from the cart.'}, status = status.HTTP_200_OK)

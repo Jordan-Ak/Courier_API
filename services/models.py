@@ -1,5 +1,6 @@
 import datetime
 from datetime import timezone
+from re import T
 from django.db import models
 from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
@@ -190,35 +191,23 @@ class Rating(BaseModel, models.Model):
 
 
 class CustomerCart(BaseModel, models.Model):
-    #products = models.ManyToManyField(CustomerOrder)
+    product = models.ForeignKey(Product, on_delete = models.CASCADE, null = True)
+    quantity = models.IntegerField(default = 1)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
     ordered = models.BooleanField(default = False)
     ordered_time = models.TimeField(null = True)
     delivered_time = models.TimeField(null = True)
-    final_price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
-    user = models.ForeignKey(get_user_model(), on_delete = models.CASCADE,)
-
-    def gen_final_price(self):
-        final_price = 0
-        for product in self.customerorder_set.all():
-            final_price += product.get_total_price()
-        self.fianl_price = final_price
-        self.save()
-
-    def __str__(self):
-        return f'{self.user}, {self.date_created}'
-
-class CustomerOrder(BaseModel, models.Model):
-    product = models.ForeignKey(Product, on_delete = DO_NOTHING)
-    quantity = models.IntegerField(default = 1)
-    ordered = models.BooleanField(default = False)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
-    user = models.ForeignKey(get_user_model(), on_delete = models.CASCADE)
-    vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE)
-    cart = models.ForeignKey(CustomerCart, on_delete = models.CASCADE)
-
+    vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE, null = True)
+    user = models.ForeignKey(get_user_model(), on_delete = models.CASCADE, null = True)
+    
     def gen_total_price(self):
         self.total_price = self.product.price * self.quantity
         self.save()
     
     def __str__(self):
         return f'{self.product.name}, {self.user}'
+
+class CartStore(BaseModel, models.Model):
+    pass
+    #This models initiates when order becomes true I suppose use pre_save to initiate
+

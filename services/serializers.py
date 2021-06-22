@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from .models import Product, ProductCategory, Rating, Tag, Vendor, vendor_directory_path, Schedule
+from .models import CustomerCart, Product, ProductCategory, Rating, Tag, Vendor, vendor_directory_path, Schedule
 
 class TagCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -169,15 +169,52 @@ class RatingUpdateSerializer(serializers.Serializer):
     rating = serializers.IntegerField
 
 
-class ProductCustomerSerializer(serializers.Serializer):
+class ProductCartSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     price = serializers.DecimalField(max_digits=10, decimal_places=2,)
     looks = serializers.ImageField()
 
-class VendorCustomerSerializer(serializers.Serializer):
+class VendorCartSerializer(serializers.Serializer):
     id = serializers.UUIDField()
+    name = serializers.CharField()
 
+class CustomerCartCreateSerializer(serializers.Serializer):
+    product = ProductCartSerializer()
+    quantity = serializers.IntegerField()
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True)
+    ordered = serializers.BooleanField(default = False,)
+    ordered_time =serializers.TimeField(read_only = True)
+    delivered_time = serializers.TimeField(read_only = True)
+    vendor = VendorCartSerializer()
+    user = serializers.CharField(read_only = True)
+
+class CustomerCartVendorListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomerCart
+        fields = ('product', 'quantity', 'total_price','ordered','ordered_time',
+                  'delivered_time','vendor','user','date_created')
+
+class CustomerCartUserListSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only = True)
+    product = ProductCartSerializer()
+    quantity = serializers.IntegerField()
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True)
+    ordered = serializers.BooleanField(default = False)
+    ordered_time =serializers.TimeField(read_only = True)
+    delivered_time = serializers.TimeField(read_only = True)
+    vendor = VendorCartSerializer()
+    user = serializers.CharField(read_only = True)
+
+class CustomerCartUserRetrieveSerializer(serializers.Serializer):
+    product = ProductCartSerializer(read_only = True)
+    quantity = serializers.IntegerField()
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True)
+    vendor = VendorCartSerializer(source = 'name', read_only = True)
+    
+
+'''    
 class CustomerOrderCreateSerializer(serializers.Serializer):
     product = ProductCustomerSerializer()
     quantity = serializers.IntegerField()
@@ -201,6 +238,6 @@ class CustomerCartRetrieveUpdateSerializer(serializers.Serializer):
     delivered_time = serializers.TimeField(read_only = True)
     final_price = serializers.DecimalField(max_digits = 10, decimal_places= 2, read_only = True)
     user = serializers.CharField(read_only = True)
-    
+'''    
      
 
