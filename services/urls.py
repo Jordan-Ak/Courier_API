@@ -1,6 +1,6 @@
 from services.views import TagCreateView
 from django.urls import path
-from .views import (CustomerCartCreateView, CustomerCartDeleteView, CustomerCartRetrieveView, CustomerCartUserListView, CustomerCartVendorListView, ProductCategoryCreateView, ProductCategoryDeleteView,
+from .views import (CustomerCartCreateView, CustomerCartDeleteView, CustomerCartRetrieveView, CustomerCartUserListView, CustomerCartVendorListView, LocationCreateView, LocationListView, ProductCategoryCreateView, ProductCategoryDeleteView,
                     ProductCategoryListView, ProductCategoryRetrieveUpdateView,
                     ProductCreateView, ProductDeleteView, ProductListView,
                     ProductRetrieveUpdateView, ProductVendorListView, RatingCreateView, RatingDeleteView, RatingListUserView, RatingListView, RatingRetrieveUpdateView, 
@@ -62,4 +62,8 @@ urlpatterns=[
     path('cart/list/', CustomerCartUserListView.as_view(), name = 'cart-list',),
     path('cart/update/<str:cart>/', CustomerCartRetrieveView.as_view(), name = 'cart-retrieve-update'),
     path('cart/delete/<str:cart>/', CustomerCartDeleteView.as_view(), name = 'cart-delete'),
+
+    #Urls for Location
+    path('location/vendor/create/', LocationCreateView.as_view(), name = 'location-create'),
+    path('location/list', LocationListView.as_view(), name = 'location-list'),
 ]

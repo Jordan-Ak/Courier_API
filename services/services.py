@@ -1,10 +1,13 @@
+import googlemaps
+from django.conf import settings
+from django.contrib.gis.geos import Point
 from collections import namedtuple
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import CustomerCart, ProductCategory, Product, Rating, Schedule, Tag, Vendor
+from .models import CustomerCart, Location, ProductCategory, Product, Rating, Schedule, Tag, Vendor
 
 
 def tag_create(name) -> object:
@@ -423,3 +426,28 @@ def customer_cart_update(instance, **kwargs):
 
 def customer_cart_delete(object):
     object.delete()
+
+
+
+def location_get(**kwargs):
+    gmaps = googlemaps.Client(key = settings.GOOGLE_API_KEY)
+    input_location = kwargs.get('formatted_address', '')
+    geocode_location = gmaps.geocode(input_location)
+    formatted_address = geocode_location[0].get('formatted_address')
+    if not formatted_address:
+        raise serializers.ValidationError('This location is not recognized')
+
+    coordinates_dict = (geocode_location[0].get('geometry').get('location'))
+    lat = coordinates_dict.get('lat')
+    lng = coordinates_dict.get('lng')
+    coordinates = f'POINT({lat} {lng})'
+    return_dictionary = {'formatted_address':formatted_address, 'coordinates':coordinates}
+    return return_dictionary
+
+def location_create(user, vendor, **location):
+    #vendor = vendor_get_user(user)
+    formatted_address = location.get('formatted_address', '')
+    coordinates = location.get('coordinates', '')  
+    Location.objects.create(vendor =vendor, formatted_address = formatted_address, coordinates = coordinates)
+    vendor.address = formatted_address
+    vendor.save()

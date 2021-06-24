@@ -2,6 +2,7 @@ import datetime
 from datetime import timezone
 from re import T
 from django.db import models
+from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
@@ -54,7 +55,7 @@ class Vendor(BaseModel, models.Model):
     tags = models.ManyToManyField(Tag)
     #opening_time = models.TimeField(_('Opening Time'), null = True)
     #closing_time = models.TimeField(_('Closing Time'), null = True)
-    location = models.CharField(_('location'),max_length = 200,)
+    address = models.CharField(_('location'),max_length = 200, null = True)
     cover = models.ImageField(_('Vendor image cover'),upload_to=vendor_directory_path)
     rating = models.DecimalField(_('Rating'),decimal_places=1, editable=False, max_digits = 2, null = True)
     users = models.ForeignKey(get_user_model(), on_delete = models.SET_DEFAULT, default = '143d24de-78b8-478a-919b-1022059cc2ec')
@@ -147,7 +148,9 @@ class Schedule(BaseModel, models.Model):
         return f'{self.vendor.name.title()}, {self.weekday}'
 
 class Location(BaseModel, models.Model):
-    pass
+    vendor = models.OneToOneField(Vendor, on_delete = models.CASCADE, null = True)
+    formatted_address = models.CharField(max_length = 255, null = True)
+    coordinates = models.PointField(null = True)
 
 class ProductCategory(BaseModel, models.Model):
     name = models.CharField(_('Product category name'),max_length = 50,)

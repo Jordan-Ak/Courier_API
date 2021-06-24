@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from .models import CustomerCart, Product, ProductCategory, Rating, Tag, Vendor, vendor_directory_path, Schedule
+from .models import CustomerCart, Location, Product, ProductCategory, Rating, Tag, Vendor, vendor_directory_path, Schedule
 
 class TagCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -213,6 +213,20 @@ class CustomerCartUserRetrieveSerializer(serializers.Serializer):
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True)
     vendor = VendorCartSerializer(source = 'name', read_only = True)
     
+class VendorLocationSerializer(serializers.Serializer):
+    id = serializers.UUIDField
+
+class LocationCreateSerializer(serializers.Serializer):
+    vendor = VendorLocationSerializer(read_only = True)
+    formatted_address = serializers.CharField(required = True)
+    coordinates = serializers.CharField(read_only = True)
+
+class LocationListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Location
+        fields = ('vendor','formatted_address','coordinates',)
+
 
 '''    
 class CustomerOrderCreateSerializer(serializers.Serializer):

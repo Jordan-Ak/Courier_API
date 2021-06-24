@@ -1,4 +1,4 @@
-from services.services import (cart_product_validation, cart_user_validation, customer_cart_create, customer_cart_delete, customer_cart_get, customer_cart_get_id, customer_cart_ordered_user_filter, customer_cart_update, 
+from services.services import (cart_product_validation, cart_user_validation, customer_cart_create, customer_cart_delete, customer_cart_get, customer_cart_get_id, customer_cart_ordered_user_filter, customer_cart_update, location_create, location_get, 
                                product_category_create, product_category_delete,
                                product_category_update, product_category_ven_cat_filter, 
                                product_category_ven_filter, product_create, product_delete, product_update, 
@@ -10,7 +10,7 @@ from services.services import (cart_product_validation, cart_user_validation, cu
                                vendor_get_id, vendor_get_name, tag_create, 
                                tag_delete, vendor_get_user, vendor_retrieve_validation, vendor_update)
 
-from services.serializers import (CustomerCartCreateSerializer, CustomerCartUserListSerializer, CustomerCartUserRetrieveSerializer, CustomerCartVendorListSerializer,
+from services.serializers import (CustomerCartCreateSerializer, CustomerCartUserListSerializer, CustomerCartUserRetrieveSerializer, CustomerCartVendorListSerializer, LocationCreateSerializer, LocationListSerializer,
                                   ProductCategoryCreateSerializer, ProductCategoryListSerializer,
                                   ProductCategoryRetrieveUpdateSerializer,
                                   ProductCreateSerializer, ProductListSerializer,
@@ -34,7 +34,7 @@ from rest_framework.views import Response
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from .models import CustomerCart, Product, ProductCategory, Rating, Schedule, Vendor, Tag
+from .models import CustomerCart, Location, Product, ProductCategory, Rating, Schedule, Vendor, Tag
 from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwner
 
 class TagCreateView(APIView):
@@ -546,3 +546,23 @@ class CustomerCartDeleteView(APIView):
         cart_user_validation(user, product)
         customer_cart_delete(product)
         return Response({'message':'Product has been removed from the cart.'}, status = status.HTTP_200_OK)
+
+
+class LocationCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LocationCreateSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        vendor = vendor_get_user(user)
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        location = location_get(**serializer.validated_data)
+        location_create(user, vendor, **location)
+        return Response({'message':'a location is now associated with this vendor'})
+
+class LocationListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = LocationListSerializer
+    queryset = Location.objects.all()
+
