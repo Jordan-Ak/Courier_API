@@ -1,4 +1,7 @@
 import googlemaps
+import more_itertools
+import re
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from collections import namedtuple
@@ -7,7 +10,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from accounts.services import user_retrieve_pk
 from django.utils.translation import ugettext_lazy as _
-from .models import CustomerCart, Location, ProductCategory, Product, Rating, Schedule, Tag, Vendor
+from .models import Checkout, CustomerCart, Location, ProductCategory, Product, Rating, Schedule, Tag, UserLocation, Vendor
 
 
 def tag_create(name) -> object:
@@ -74,10 +77,7 @@ def vendor_create(user,**kwargs) -> Vendor:
             raise serializers.ValidationError(_('Tag does not exist.'))
     
     
-    new_vendor = Vendor.objects.create(name = kwargs.get('name'), service = kwargs.get('service'),
-                                          #opening_time = kwargs.get('opening_time', None),
-                                          #closing_time = kwargs.get('closing_time',None),
-                                          location = kwargs.get('location',''), 
+    new_vendor = Vendor.objects.create(name = kwargs.get('name'), service = kwargs.get('service'), 
                                           cover = kwargs.get('cover',''),
                                           users = user,)
     new_vendor.save()
@@ -395,7 +395,7 @@ def cart_product_validation(user, **kwargs):
         cart.quantity += 1
         cart.save()
         cart.gen_total_price()
-    return cart
+        return cart
 
 def cart_user_validation(user, product):
     if user.is_staff or product.user == user:
@@ -451,3 +451,164 @@ def location_create(user, vendor, **location):
     Location.objects.create(vendor =vendor, formatted_address = formatted_address, coordinates = coordinates)
     vendor.address = formatted_address
     vendor.save()
+
+def google_time_parser(date_string)-> datetime:
+    parsed_date = None
+    try:
+        parsed_date = datetime.strptime(date_string, '%M mins')
+        return parsed_date    
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%H hours %M mins')
+        return parsed_date
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%H hours %M min' )
+        return parsed_date
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%H hour %M mins')
+        return parsed_date
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%H hour %M min')
+        return parsed_date
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%M min')
+        return parsed_date
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%H hours')
+        return parsed_date
+    except ValueError:
+        pass
+    try:
+        parsed_date = datetime.strptime(date_string, '%H hour')
+        return parsed_date
+    except ValueError:
+        pass
+
+def parsed_time_total(parsed_dates):
+    time_0 = '0 hours 0 mins'  #Zero time implemented to convert datetime instances to timedelta when subtract
+    total_time = timedelta(seconds = 0, microseconds= 0, milliseconds= 0)
+    parsed_0 = google_time_parser(time_0)
+    for date in parsed_dates:
+        
+        format_time = date - parsed_0
+        total_time += format_time
+        #print(total_time, format_time)
+    return(total_time)
+
+def formatted_time_total(delta_time):
+    seconds = delta_time.seconds
+    hours = seconds//3600
+    minutes = (seconds//60)%60
+    return(f'{hours} hours {minutes} minutes')
+
+def transit_get(location_list) -> dict:
+    gmaps = googlemaps.Client(key = settings.GOOGLE_API_KEY)
+    locations = location_list
+    distance = 0
+    parsed_dates = []
+    for a,b in more_itertools.pairwise(locations):
+        result = gmaps.distance_matrix(a, b)
+        distance_result = result['rows'][0]['elements'][0]['distance']['text']
+        duration_result = result['rows'][0]['elements'][0]['duration']['text']
+        
+        distance_list = re.findall(r"[-+]?\d*\.\d+|\d+", distance_result) #Regex expressions to extract value from string
+        distance += (float(distance_list[0]))
+        
+        parsed_date = google_time_parser(duration_result)
+        parsed_dates.append(parsed_date)
+    
+    final_parsed_time = parsed_time_total(parsed_dates)
+    final_formatted_time = formatted_time_total(final_parsed_time)
+    return({'distance': f'{distance} km', 'final_formatted_time': final_formatted_time,
+            'final_parsed_time': final_parsed_time})
+
+def user_location_get_user(user):
+    try:
+        user_location = UserLocation.objects.get(user = user)
+    except UserLocation.DoesNotExist:
+        raise serializers.ValidationError(_('No location is associated with this user'))
+    return user_location
+
+def user_location_create(user, **formatted_address):
+    location = formatted_address.get('formatted_address', '')
+    coordinates = formatted_address.get('coordinates', '')
+    user_location = UserLocation.objects.create(user = user, formatted_address = location,
+                                                coordinates = coordinates)
+    user_location.save()
+    return user_location
+  
+
+def user_location_validation(user, **formatted_address):
+    queryset = UserLocation.objects.filter(user = user)
+    if queryset:
+        update =  user_location_update(queryset[0], **formatted_address)
+        return update
+    else:
+        return None
+
+def user_location_update(instance, **formatted_address):
+    instance.formatted_address = formatted_address.get('formatted_address', instance.formatted_address)
+    instance.coordinates = formatted_address.get('coordinates', instance.coordinates)
+    instance.save()
+    return instance
+
+    
+
+def checkout_cart(user):
+    checkout_cart = customer_cart_ordered_user_filter(user)
+    return checkout_cart
+    
+def final_price_calculate(query_dict):
+    final_price = 0
+    for product in query_dict: #Iterating through a list of dictionaries using key totalprice
+        final_price += product.total_price
+    return final_price
+
+def compile_locations(cart, user_location_obj):
+    locations = []
+    for product in cart:
+        vendor_id = product.vendor.id
+        vendor = vendor_get_id(vendor_id)
+        locations.append(vendor.address)
+    set_locations = set(locations) #Set method makes locations unique, only one drawback in unique use case
+    list_locations = list(set_locations)
+    list_locations.append(user_location_obj.formatted_address)
+    return list_locations
+
+
+def checkout_temp_create(final_price, user, user_location,**transit_dict):
+    checkout_obj = Checkout.objects.create(final_price = final_price, 
+                            transit_time = transit_dict['final_formatted_time'],
+                            transit_distance = transit_dict['distance'], location = user_location,
+                             user = user)
+    checkout_obj.delete()
+    return checkout_obj
+
+def checkout_create(final_price, user, user_location,**transit_dict):
+    checkout_obj = Checkout.objects.create(final_price = final_price, 
+                            transit_time = transit_dict['final_formatted_time'],
+                            transit_distance = transit_dict['distance'], location = user_location,
+                             user = user)
+    
+    return checkout_obj
+
+def cart_ordered_true(cart):
+    for product in cart:
+        product.ordered = True
+        product.ordered_time = datetime.now()
+        product.save()
+
+
+
+

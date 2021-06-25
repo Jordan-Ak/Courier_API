@@ -30,18 +30,6 @@ class Tag(BaseModel, models.Model):
         return self.name.title()
 
 class Vendor(BaseModel, models.Model):
-  #  RESTAURANT = 'REST'
-   # PARTY = 'PARTY'
-   # PHARMACY = 'PHAR'
-   # GROCERIES = 'GRO'
-   # CLOTHING = 'CLOTH'
-   # service_choices = [
-   #     (RESTAURANT, 'restaurant'),
-   #     (PARTY, 'party'),
-   #     (PHARMACY, 'pharmacy'),
-    #    (GROCERIES, 'groceries'),
-    #    (CLOTHING, 'clothing'),
-    #]
 
     class ServiceChoices(models.TextChoices):
         RESTAURANT = 'REST', _('Restaurant')
@@ -53,12 +41,11 @@ class Vendor(BaseModel, models.Model):
     name = models.CharField(_('Vendor Name'),max_length = 150,)
     service = models.CharField(_('Service'),max_length = 6, choices=ServiceChoices.choices,)
     tags = models.ManyToManyField(Tag)
-    #opening_time = models.TimeField(_('Opening Time'), null = True)
-    #closing_time = models.TimeField(_('Closing Time'), null = True)
-    address = models.CharField(_('location'),max_length = 200, null = True)
+    address = models.CharField(_('address'),max_length = 200, null = True)
     cover = models.ImageField(_('Vendor image cover'),upload_to=vendor_directory_path)
     rating = models.DecimalField(_('Rating'),decimal_places=1, editable=False, max_digits = 2, null = True)
     users = models.ForeignKey(get_user_model(), on_delete = models.SET_DEFAULT, default = '143d24de-78b8-478a-919b-1022059cc2ec')
+    ##Meant to be a One-to-One-Relationship
 
     def gen_average_vendor_rating(self):
         rating_queryset = Rating.objects.filter(vendor_rated = self.id)
@@ -72,15 +59,7 @@ class Vendor(BaseModel, models.Model):
         return self.name.title()
 
 class Schedule(BaseModel, models.Model):
-    #WEEKDAYS = [
-    #(0, _("Monday")),
-    #(1, _("Tuesday")),
-    #(2, _("Wednesday")),
-    #(3, _("Thursday")),
-    #(4, _("Friday")),
-    #(5, _("Saturday")),
-    #(6, _("Sunday")),
-    #]
+
     class WeekdayChoices(models.IntegerChoices):
         MONDAY = 0, _('Monday')
         TUESDAY = 1, _('Tuesday')
@@ -152,11 +131,17 @@ class Location(BaseModel, models.Model):
     formatted_address = models.CharField(max_length = 255, null = True)
     coordinates = models.PointField(null = True)
 
+class UserLocation(BaseModel, models.Model):
+    user = models.OneToOneField(get_user_model(), on_delete = models.CASCADE, null = True)
+    formatted_address = models.CharField(max_length = 255, null = True)
+    coordinates = models.PointField(null = True)
+
+
 class ProductCategory(BaseModel, models.Model):
     name = models.CharField(_('Product category name'),max_length = 50,)
     vendor = models.ForeignKey(Vendor, on_delete = models.CASCADE,)
     slug_name = models.SlugField(null = True, db_index=False)
-    #method set_products_to_default_category lies in signals
+    #method set_products_to_default_category lies in signals.py
 
     def generate_slug_name(self):
         self.slug_name = slugify(self.name)
@@ -186,7 +171,7 @@ class Rating(BaseModel, models.Model):
     who_rated = models.ForeignKey(get_user_model(), on_delete = models.CASCADE)
     rating = models.PositiveSmallIntegerField(validators = [MaxValueValidator(5)])
 
-    class Meta: #This constraint restricts users to have only one rating per book
+    class Meta: #This constraint restricts users to have only one rating per vendor
         unique_together = ('who_rated', 'vendor_rated',)
     
     def __str__(self):
@@ -209,6 +194,15 @@ class CustomerCart(BaseModel, models.Model):
     
     def __str__(self):
         return f'{self.product.name}, {self.user}'
+
+class Checkout(BaseModel, models.Model):
+    final_price = models.DecimalField(null = True, max_digits=20, decimal_places=2)
+    transit_time = models.CharField(null = True, max_length = 30)
+    transit_distance = models.CharField(null = True, max_length = 100)
+    location = models.CharField(null = True, max_length = 100)
+    products = models.JSONField(null = True)
+    user = models.ForeignKey(get_user_model(), on_delete = models.CASCADE)
+
 
 class CartStore(BaseModel, models.Model):
     pass

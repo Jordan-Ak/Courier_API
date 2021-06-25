@@ -1,4 +1,8 @@
-from services.services import (cart_product_validation, cart_user_validation, customer_cart_create, customer_cart_delete, customer_cart_get, customer_cart_get_id, customer_cart_ordered_user_filter, customer_cart_update, location_create, location_get, 
+from services.services import (cart_ordered_true, cart_product_validation, cart_user_validation, checkout_cart, checkout_create,
+                               checkout_temp_create, compile_locations, customer_cart_create,
+                               customer_cart_delete, customer_cart_get, customer_cart_get_id,
+                               customer_cart_ordered_user_filter, customer_cart_update, final_price_calculate,
+                               location_create, location_get, 
                                product_category_create, product_category_delete,
                                product_category_update, product_category_ven_cat_filter, 
                                product_category_ven_filter, product_create, product_delete, product_update, 
@@ -6,13 +10,18 @@ from services.services import (cart_product_validation, cart_user_validation, cu
                                rating_create, rating_delete, rating_get_id,
                                rating_update, rating_user_validation, schedule_create, 
                                schedule_update, schedule_vendor_day_filter, 
-                               schedule_vendor_filter, vendor_create, vendor_delete, 
+                               schedule_vendor_filter, transit_get, user_location_create,
+                               user_location_get_user, user_location_validation, vendor_create, vendor_delete, 
                                vendor_get_id, vendor_get_name, tag_create, 
                                tag_delete, vendor_get_user, vendor_retrieve_validation, vendor_update)
 
-from services.serializers import (CustomerCartCreateSerializer, CustomerCartUserListSerializer, CustomerCartUserRetrieveSerializer, CustomerCartVendorListSerializer, LocationCreateSerializer, LocationListSerializer,
+from services.serializers import (CartCheckoutSerializer, CheckoutCreateSerializer,
+                                  CustomerCartCreateSerializer,
+                                  CustomerCartUserListSerializer, CustomerCartUserRetrieveSerializer,
+                                  CustomerCartVendorListSerializer, LocationCreateSerializer,
+                                  LocationListSerializer,
                                   ProductCategoryCreateSerializer, ProductCategoryListSerializer,
-                                  ProductCategoryRetrieveUpdateSerializer,
+                                  ProductCategoryRetrieveUpdateSerializer, 
                                   ProductCreateSerializer, ProductListSerializer,
                                   ProductRetrieveUpdateSerializer, ProductVendorListSerializer,
                                   RatingCreateSerializer, RatingListSerializer,
@@ -20,7 +29,7 @@ from services.serializers import (CustomerCartCreateSerializer, CustomerCartUser
                                   RatingUpdateSerializer,
                                   ScheduleCreateSerializer,ScheduleListSerializer, 
                                   ScheduleRetrieveListSerializer,
-                                  ScheduleRetrieveUpdateSerializer,
+                                  ScheduleRetrieveUpdateSerializer, UserLocationCreateSerializer,
                                   VendorCreateSerializer, 
                                   VendorListSerializer,
                                   TagCreateSerializer, 
@@ -565,4 +574,62 @@ class LocationListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = LocationListSerializer
     queryset = Location.objects.all()
+
+
+class UserLocationCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserLocationCreateSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        user_location_obj = user_location_get_user(user)
+        serializer = self.serializer_class(user_location_obj)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        formatted_address = location_get(**serializer.validated_data)
+        location_exist = user_location_validation(user, **formatted_address)
+        if not location_exist:
+            user_location_create(user, **formatted_address)
+        return Response({'message':'Your current location has been added'}, status = status.HTTP_201_CREATED)
+
+class CheckoutCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CheckoutCreateSerializer
+    serializer_class_product = CartCheckoutSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        cart  = checkout_cart(user)
+        final_price = final_price_calculate(cart)
+        user_location_obj = user_location_get_user(user)
+        location_list = compile_locations(cart, user_location_obj)
+        transit_dict = transit_get(location_list)
+        checkout_temp_object = checkout_temp_create(final_price, user, user_location_obj.formatted_address,
+                                                    **transit_dict) #temporary objects
+
+        serializer = self.serializer_class_product(cart, many = True)
+        checkout_temp_object.products = serializer.data
+        serializer = self.serializer_class(checkout_temp_object)
+        return Response(serializer.data, status = status.HTTP_200_OK) #Get method that reveals all the info needed for order
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        cart  = checkout_cart(user)
+        final_price = final_price_calculate(cart)
+        user_location_obj = user_location_get_user(user)
+        location_list = compile_locations(cart, user_location_obj)
+        transit_dict = transit_get(location_list)
+        checkout_object = checkout_create(final_price, user, user_location_obj.formatted_address,
+                                                    **transit_dict) #temporary objects
+
+        serializer = self.serializer_class_product(cart, many = True)
+        checkout_object.products = serializer.data
+        checkout_object.save()
+        cart_ordered_true(cart)
+        serializer = self.serializer_class(checkout_object)
+        return Response({'message':'Order has been executed successfully'}, status = status.HTTP_200_OK)
 

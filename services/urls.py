@@ -1,11 +1,11 @@
 from services.views import TagCreateView
 from django.urls import path
-from .views import (CustomerCartCreateView, CustomerCartDeleteView, CustomerCartRetrieveView, CustomerCartUserListView, CustomerCartVendorListView, LocationCreateView, LocationListView, ProductCategoryCreateView, ProductCategoryDeleteView,
+from .views import (CheckoutCreateView, CustomerCartCreateView, CustomerCartDeleteView, CustomerCartRetrieveView, CustomerCartUserListView, CustomerCartVendorListView, LocationCreateView, LocationListView, ProductCategoryCreateView, ProductCategoryDeleteView,
                     ProductCategoryListView, ProductCategoryRetrieveUpdateView,
                     ProductCreateView, ProductDeleteView, ProductListView,
                     ProductRetrieveUpdateView, ProductVendorListView, RatingCreateView, RatingDeleteView, RatingListUserView, RatingListView, RatingRetrieveUpdateView, 
                     ScheduleCreateView, ScheduleDeleteView, ScheduleListView,
-                    ScheduleRetrieveListView, ScheduleRetrieveUpdateView, VendorCreateView, 
+                    ScheduleRetrieveListView, ScheduleRetrieveUpdateView, UserLocationCreateView, VendorCreateView, 
                     VendorListView, VendorDeleteView, 
                     TagCreateView, TagDeleteView, 
                     TagListView, VendorRetrieveUpdateView,)
@@ -66,4 +66,10 @@ urlpatterns=[
     #Urls for Location
     path('location/vendor/create/', LocationCreateView.as_view(), name = 'location-create'),
     path('location/list', LocationListView.as_view(), name = 'location-list'),
+
+    #Urls userlocation
+    path('user/location/create/', UserLocationCreateView.as_view(), name = 'user-location-create'),
+
+    #urls for checkout
+    path('user/checkout/', CheckoutCreateView.as_view(), name = 'user-checkout'),
 ]

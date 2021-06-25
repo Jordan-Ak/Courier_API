@@ -1,3 +1,4 @@
+from django.utils import tree
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from .models import CustomerCart, Location, Product, ProductCategory, Rating, Tag, Vendor, vendor_directory_path, Schedule
@@ -20,7 +21,7 @@ class VendorCreateSerializer(serializers.Serializer):
     tags = TagSerializer(many = True,required = False,)
     #opening_time = serializers.TimeField(required = False, format = "%H:%M")
     #closing_time = serializers.TimeField(required = False, format = "%H:%M")
-    location = serializers.CharField(required = False,)
+    address = serializers.CharField(read_only = True)
     cover = serializers.ImageField(required = False)
     rating = serializers.DecimalField(max_digits = 2, decimal_places=1, read_only = True,)
     users = serializers.CharField(read_only = True,) 
@@ -226,6 +227,41 @@ class LocationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
         fields = ('vendor','formatted_address','coordinates',)
+
+class UserLocationCreateSerializer(serializers.Serializer):
+    user = serializers.UUIDField(read_only = True)
+    formatted_address = serializers.CharField()
+    coordinates = serializers.CharField(read_only = True)
+
+class ProductCheckoutSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField(required = False)
+    detail = serializers.CharField(required = False)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, required = False)
+    #looks = serializers.ImageField(required = False)
+    product_category = ProductCategoryProductSerializer(required = False)
+    vendor = VendorProductSerializer(read_only = True)
+
+class CartCheckoutSerializer(serializers.Serializer):
+    product = ProductCheckoutSerializer(read_only = True)
+    quantity = serializers.IntegerField(read_only = True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only = True)
+    ordered = serializers.BooleanField(read_only = True)
+    ordered_time = serializers.TimeField(read_only = True)
+    delivered_time = serializers.TimeField(read_only = True)
+    vendor = VendorProductSerializer(read_only = True)
+    user = serializers.CharField(read_only = True)
+
+
+class CheckoutCreateSerializer(serializers.Serializer):
+    final_price = serializers.DecimalField(max_digits = 10, decimal_places=2, read_only = True)
+    transit_time = serializers.CharField(read_only = True)
+    transit_distance = serializers.CharField(read_only = True)
+    location = serializers.CharField(read_only = True)
+    products = serializers.JSONField(read_only = True)
+    user = serializers.CharField(read_only = True)
+   
+
 
 
 '''    
