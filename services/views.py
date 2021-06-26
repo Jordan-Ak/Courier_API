@@ -169,6 +169,10 @@ class ScheduleCreateView(APIView):
     permissions_classes = [permissions.IsAuthenticated,] #Validation in post method doesn't allow non-owners
     serializer_class = ScheduleCreateSerializer
     
+    @swagger_auto_schema(operation_id='Schedule-Create', 
+                         operation_description='Schedule Create Endpoint',
+                         request_body=ScheduleCreateSerializer,
+                         responses={'200': 'Schedule Created Successfully'})
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception = True)
@@ -196,6 +200,10 @@ class ScheduleRetrieveListView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ScheduleRetrieveListSerializer
 
+    @swagger_auto_schema(operation_id='Schedule Retrieve for Vendor', 
+                         operation_description='Schedule Retrieve Endpoint for Vendor',
+                         request_body=None,
+                         responses={'200': ScheduleRetrieveListSerializer()})
     def get(self, request, *args, **kwargs):
         vendor_id = kwargs['vendor']
         vendor = vendor_get_id(vendor_id)
@@ -210,6 +218,10 @@ class ScheduleRetrieveUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ScheduleRetrieveUpdateSerializer
     
+    @swagger_auto_schema(operation_id='Schedule Retrieve endpoint', 
+                         operation_description='Schedule Retrieve endpoint',
+                         request_body=None,
+                         responses={'200': ScheduleRetrieveUpdateSerializer()})
     def get(self, request, *args, **kwargs):
         vendor = vendor_get_id(kwargs['vendor'])
         weekday = kwargs['weekday']
@@ -219,6 +231,11 @@ class ScheduleRetrieveUpdateView(APIView):
         
         return Response(serializer.data, status = status.HTTP_200_OK)
     
+
+    @swagger_auto_schema(operation_id='Schedule Retrieve Update endpoint', 
+                         operation_description='Schedule Update endpoint',
+                         request_body=ScheduleRetrieveUpdateSerializer(),
+                         responses={'200': 'Schedule Updated Successfully'})
     def put(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data)
         serializer.is_valid(raise_exception = True,)
@@ -228,6 +245,10 @@ class ScheduleRetrieveUpdateView(APIView):
         schedule_update(schedule, **serializer.validated_data)
         return Response({'message':'Schedule has been updated successfully'}, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='Schedule Retrieve Update endpoint', 
+                         operation_description='Schedule Update endpoint',
+                         request_body=ScheduleRetrieveUpdateSerializer(),
+                         responses={'200': 'Schedule Updated Successfully'})
     def patch(self, request, *args, **kwargs):
         serializer = self.serializer_class(data = request.data,partial = True)
         serializer.is_valid(raise_exception = True,)
@@ -241,6 +262,11 @@ class ScheduleRetrieveUpdateView(APIView):
 class ScheduleDeleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 #Make changes to permissions on this endpoint and take logic to service layer
+    
+    @swagger_auto_schema(operation_id='Schedule Delete', 
+                         operation_description='Schedule Delete Endpoint',
+                         request_body=None,
+                         responses={'200': 'Schedule has been deleted successfully'})
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         schedules = schedule_vendor_filter(vendor)
@@ -253,6 +279,10 @@ class ProductCategoryCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductCategoryCreateSerializer
     
+    @swagger_auto_schema(operation_id='Product Category Create', 
+                         operation_description='Product Category Create Endpoint',
+                         request_body=ProductCategoryCreateSerializer(),
+                         responses={'200': 'Product Category successfully added'})
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         user_id = request.user.id
@@ -266,6 +296,10 @@ class ProductCategoryListView(APIView):
     permissions_classes = [permissions.AllowAny]
     serializer_class = ProductCategoryListSerializer
     
+    @swagger_auto_schema(operation_id='Product Category ListView', 
+                         operation_description='Product Category List View',
+                         request_body=None,
+                         responses={'200': ProductCategoryListSerializer()})
     def get(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         user_id = request.user.id
@@ -278,6 +312,11 @@ class ProductCategoryRetrieveUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductCategoryRetrieveUpdateSerializer
 
+
+    @swagger_auto_schema(operation_id='Product Category Retrieve', 
+                         operation_description='Product Category Retrieve  endpoint',
+                         request_body=None,
+                         responses={'200': ProductCategoryRetrieveUpdateSerializer()})
     def get(self, request, *args, **kwargs):
         user_id = request.user.id
         vendor = kwargs['vendor']
@@ -287,6 +326,10 @@ class ProductCategoryRetrieveUpdateView(APIView):
         serializer = self.serializer_class(data)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='Product Category Update', 
+                         operation_description='Product Category Update endpoint',
+                         request_body=ProductCategoryRetrieveUpdateSerializer(),
+                         responses={'200': None})
     def put(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_category = kwargs['slug_name']
@@ -298,6 +341,10 @@ class ProductCategoryRetrieveUpdateView(APIView):
         return Response({'message':'Product Category has been updated successfully'},
                                     status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='Product Category Update', 
+                         operation_description='Product Category Update endpoint',
+                         request_body=ProductCategoryRetrieveUpdateSerializer(),
+                         responses={'200': None})
     def patch(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_category = kwargs['slug_name']
@@ -312,6 +359,11 @@ class ProductCategoryRetrieveUpdateView(APIView):
 class ProductCategoryDeleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+
+    @swagger_auto_schema(operation_id='Product Category Delete', 
+                         operation_description='Product Category Delete endpoint',
+                         request_body=None,
+                         responses={'200': "Product Category Deleted Successfully"})
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_cat = kwargs['slug_name']
@@ -327,6 +379,10 @@ class ProductCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductCreateSerializer
     
+    @swagger_auto_schema(operation_id='Product Create', 
+                         operation_description='Product Create endpoint',
+                         request_body=ProductCreateSerializer(),
+                         responses={'200': "Product Created Successfully"})
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         vendor_obj = vendor_get_id(vendor)
@@ -356,6 +412,10 @@ class ProductRetrieveUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProductRetrieveUpdateSerializer
 
+    @swagger_auto_schema(operation_id='Product Retrieve', 
+                         operation_description='Product Retrieve endpoint',
+                         request_body=None,
+                         responses={'200': ProductRetrieveUpdateSerializer()})
     def get(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_cat = kwargs['product_cat']
@@ -366,6 +426,10 @@ class ProductRetrieveUpdateView(APIView):
         serializer = self.serializer_class(product_obj)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='Product Update', 
+                         operation_description='Product Update endpoint',
+                         request_body=ProductRetrieveUpdateSerializer(),
+                         responses={'200': "Product Updated Successfully"})
     def put(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_cat = kwargs['product_cat']
@@ -379,7 +443,10 @@ class ProductRetrieveUpdateView(APIView):
 
         return Response({'message':'Product has been updated successfully'}, status = status.HTTP_200_OK)
 
-
+    @swagger_auto_schema(operation_id='Product Update', 
+                         operation_description='Product Update endpoint',
+                         request_body=ProductRetrieveUpdateSerializer(),
+                         responses={'200': "Product Updated Successfully"})
     def patch(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_cat = kwargs['product_cat']
@@ -396,6 +463,10 @@ class ProductRetrieveUpdateView(APIView):
 class ProductDeleteView(APIView):
     permissions_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(operation_id='Product Delete', 
+                         operation_description='Product Delete endpoint',
+                         request_body=None,
+                         responses={'200': "Product Deleted Successfully"})
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         product_cat = kwargs['product_cat']
@@ -412,6 +483,10 @@ class RatingCreateView(APIView):
     permissions_classes = [permissions.IsAuthenticated]
     serializer_class = RatingCreateSerializer
 
+    @swagger_auto_schema(operation_id='Rating Create', 
+                         operation_description='Rating Create Endpoint',
+                         request_body=RatingCreateSerializer,
+                         responses={'200': "Rating Created Successfully"})
     def post(self, request, *args, **kwargs):
         vendor = kwargs['vendor']
         user_id = self.request.user.id
@@ -441,6 +516,10 @@ class RatingRetrieveUpdateView(APIView):
     serializer_class_GET = RatingRetrieveSerializer
     serializer_class = RatingUpdateSerializer
     
+    @swagger_auto_schema(operation_id='Rating Retrieve', 
+                         operation_description='Rating Retrieve endpoint',
+                         request_body=None,
+                         responses={'200': RatingRetrieveSerializer()})
     def get(self, request, *args, **kwargs):
         rating_id = kwargs['rating']
         user = self.request.user
@@ -449,6 +528,10 @@ class RatingRetrieveUpdateView(APIView):
         serializer = self.serializer_class_GET(rating)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='Rating Update', 
+                         operation_description='Rating Update endpoint',
+                         request_body=RatingUpdateSerializer,
+                         responses={'200': 'Rating Updated Successfully'})
     def put(self, request, *args, **kwargs):
         rating_id = kwargs['rating']
         user = self.request.user
@@ -463,6 +546,10 @@ class RatingRetrieveUpdateView(APIView):
 class RatingDeleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(operation_id='Rating Delete', 
+                         operation_description='Rating Delete endpoint',
+                         request_body=None,
+                         responses={'200': "Rating Deleted Successfully"})
     def post(self, request, *args, **kwargs):
         rating_id = kwargs['rating']
         user = self.request.user
@@ -477,6 +564,10 @@ class CustomerCartCreateView(APIView):
     serializer_class = CustomerCartCreateSerializer
 
     ####Code That checks schedule before initiating a product
+    @swagger_auto_schema(operation_id='Customer Cart Create', 
+                         operation_description='Customer Cart Create endpoint',
+                         request_body=CustomerCartCreateSerializer(),
+                         responses={'200': "Product added to cart"})
     def post(self, request, *args, **kwargs):
         user = self.request.user
         serializer = self.serializer_class(data = request.data)
@@ -505,6 +596,10 @@ class CustomerCartUserListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CustomerCartUserListSerializer
 
+    @swagger_auto_schema(operation_id='CustomerCart User List Retrieve', 
+                         operation_description='Customer Cart User List endpoint',
+                         request_body=None,
+                         responses={'200': CustomerCartUserListSerializer()})
     def get(self, request, *args, **kwargs):
         user = self.request.user
         products = customer_cart_ordered_user_filter(user)
@@ -517,6 +612,10 @@ class CustomerCartRetrieveView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CustomerCartUserRetrieveSerializer
 
+    @swagger_auto_schema(operation_id='CustomerCart User Retrieve', 
+                         operation_description='Customer Cart User Retrieve endpoint',
+                         request_body=None,
+                         responses={'200': CustomerCartUserRetrieveSerializer()})
     def get(self, request, *args, **kwargs):
         user = self.request.user
         cart_id = kwargs['cart']
@@ -525,6 +624,10 @@ class CustomerCartRetrieveView(APIView):
         serializer = self.serializer_class(product)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='CustomerCart User Retrieve', 
+                         operation_description='Customer Cart User Retrieve endpoint',
+                         request_body=CustomerCartUserRetrieveSerializer,
+                         responses={'200': "Cart has been updated successfully"})
     def put(self, request, *args, **kwargs):
         user = self.request.user
         cart_id = kwargs['cart']
@@ -535,6 +638,10 @@ class CustomerCartRetrieveView(APIView):
         customer_cart_update(product, **serializer.validated_data)
         return Response({'message':'Cart updated Successfully'}, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='CustomerCart User Retrieve', 
+                         operation_description='Customer Cart User Retrieve endpoint',
+                         request_body=CustomerCartUserRetrieveSerializer,
+                         responses={'200': "Cart has been updated successfully"})
     def patch(self, request, *args, **kwargs):
         user = self.request.user
         cart_id = kwargs['cart']
@@ -548,6 +655,10 @@ class CustomerCartRetrieveView(APIView):
 class CustomerCartDeleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(operation_id='CustomerCart Delete', 
+                         operation_description='Customer Cart User Delete endpoint',
+                         request_body=None,
+                         responses={'200': "Product has been removed from cart."})
     def post(self, request, *args, **kwargs):
         user = self.request.user
         cart_id = kwargs['cart']
@@ -561,6 +672,10 @@ class LocationCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = LocationCreateSerializer
 
+    @swagger_auto_schema(operation_id='Vendor Location Create', 
+                         operation_description='Vendor Location Create endpoint',
+                         request_body=LocationCreateSerializer(),
+                         responses={'200': "A location is now associated with this vendor"})
     def post(self, request, *args, **kwargs):
         user = self.request.user
         vendor = vendor_get_user(user)
@@ -580,12 +695,20 @@ class UserLocationCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserLocationCreateSerializer
 
+    @swagger_auto_schema(operation_id='User Location retrieve', 
+                         operation_description='User Location retrieve Endpoint',
+                         request_body=None,
+                         responses={'200': UserLocationCreateSerializer()})
     def get(self, request, *args, **kwargs):
         user = self.request.user
         user_location_obj = user_location_get_user(user)
         serializer = self.serializer_class(user_location_obj)
         return Response(serializer.data, status = status.HTTP_200_OK)
 
+    @swagger_auto_schema(operation_id='User Location Create/Update', 
+                         operation_description='User Location Create/Update Endpoint',
+                         request_body=UserLocationCreateSerializer,
+                         responses={'200': 'User location has been updated successfully.'})
     def post(self, request, *args, **kwargs):
         user = self.request.user
         serializer = self.serializer_class(data = request.data)
@@ -601,6 +724,10 @@ class CheckoutCreateView(APIView):
     serializer_class = CheckoutCreateSerializer
     serializer_class_product = CartCheckoutSerializer
 
+    @swagger_auto_schema(operation_id='Checkout Retrieve', 
+                         operation_description='Checkout Retrieve(retrieve all details for cart)',
+                         request_body=None,
+                         responses={'200': CheckoutCreateSerializer()})
     def get(self, request, *args, **kwargs):
         user = self.request.user
         cart  = checkout_cart(user)
@@ -616,6 +743,10 @@ class CheckoutCreateView(APIView):
         serializer = self.serializer_class(checkout_temp_object)
         return Response(serializer.data, status = status.HTTP_200_OK) #Get method that reveals all the info needed for order
 
+    @swagger_auto_schema(operation_id='Checkout Create', 
+                         operation_description='Checkout Create(save all details for cart)',
+                         request_body=CheckoutCreateSerializer,
+                         responses={'200': "Your Products are on the way."})
     def post(self, request, *args, **kwargs):
         user = self.request.user
         cart  = checkout_cart(user)
