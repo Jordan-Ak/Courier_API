@@ -387,6 +387,7 @@ def customer_cart_ordered_user_filter(user):
     return products
 
 def cart_product_validation(user, **kwargs):
+    #Code to add quantity to already added product.
     product_select = kwargs.get('product','')
     current_cart = CustomerCart.objects.filter(user = user).filter(ordered = False).filter(
                                                 product = product_select['id'])
@@ -447,7 +448,8 @@ def location_get(**kwargs):
 def location_create(user, vendor, **location):
     #vendor = vendor_get_user(user)
     formatted_address = location.get('formatted_address', '')
-    coordinates = location.get('coordinates', '')  
+    coordinates = location.get('coordinates', '')
+    #I wonder if the created location saves I think it does without explicitly calling the save function.  
     Location.objects.create(vendor =vendor, formatted_address = formatted_address, coordinates = coordinates)
     vendor.address = formatted_address
     vendor.save()
@@ -569,9 +571,9 @@ def checkout_cart(user):
     checkout_cart = customer_cart_ordered_user_filter(user)
     return checkout_cart
     
-def final_price_calculate(query_dict):
+def final_price_calculate(query_dict): #This object is not a dictionary instead a list of objects
     final_price = 0
-    for product in query_dict: #Iterating through a list of dictionaries using key totalprice
+    for product in query_dict: #Iterating through a list of objects using key totalprice
         final_price += product.total_price
     return final_price
 
@@ -592,7 +594,7 @@ def checkout_temp_create(final_price, user, user_location,**transit_dict):
                             transit_time = transit_dict['final_formatted_time'],
                             transit_distance = transit_dict['distance'], location = user_location,
                              user = user)
-    checkout_obj.delete()
+    checkout_obj.delete() #That is why the "temp" is there because it is a temporary object that gets deleted.
     return checkout_obj
 
 def checkout_create(final_price, user, user_location,**transit_dict):

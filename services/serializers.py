@@ -124,7 +124,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = ('name', 'detail','price','looks','product_category','vendor',)
 
-class ProductVendorListSerializer(serializers.ModelSerializer):
+class ProductVendorListSerializer(serializers.ModelSerializer): #This serializer serves a different function as it lists products according to vendor
 
     class Meta:
         model = Product
