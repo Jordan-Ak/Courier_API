@@ -145,7 +145,7 @@ class VendorListView(generics.ListAPIView):
     queryset = Vendor.objects.all()
 
     def list(self, request, *args, **kwargs):
-        queryset = self.queryset
+        queryset = self.queryset.all()
         for query in queryset:
             query.gen_average_vendor_rating()
         serializer = self.serializer_class(queryset, many = True,)
