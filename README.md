@@ -178,3 +178,26 @@ class CustomerCart(BaseModel, models.Model):
 * For the Schedule model that was created, the Places/Place API provided by google could have served to also provide this schedule but it's better considered to reduce the calls placed on the google api.
 
 
+### A Review of the Code 
+* This section looks on places that should be refactored and potential unnecessary code.
+* The password change Validation should be refactored instead of being repeated in different locations.
+* There are places within the code that contains relative imports instead of the Pep 8 recommended absolute imports.
+* Imports were not separated according to: Python standard Library, Third-Party Packages, and Project imports accordingly.
+* The Vendor_create function needs to be refactored to do only one task.
+* Location-Address naming discrepancy as regards the location of the vendor.
+* Schedule_create function does double validation.
+* Schdedule_create function does too many tasks.
+* Schedule_retrieve View for loop can be moved to the service layer.
+* Error as regards incorrect UUIDS in the URLs give an error instead of 404.
+* Product_create function should be refactored.
+* Same with Product_update
+* Rating_create function should be refactored.
+* Superuser does not have absolute control as he should have, restrictions should be adjusted to accmmodate superuser authority.
+* Naming discrepancy with CustomerCartRetrieve function lacks the Update part of the name.
+* Did not add validation to check if user is already linked with a vendor.
+* Google time parser can be extracted with regex.
+* Having both post and get calls to the google api is not efficient.
+
+Most of the part of the review can be seen in the service.py layer that is in the services app.
+
+
