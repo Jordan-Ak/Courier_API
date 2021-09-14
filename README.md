@@ -197,6 +197,7 @@ class CustomerCart(BaseModel, models.Model):
 * Did not add validation to check if user is already linked with a vendor.
 * Google time parser can be extracted with regex.
 * Having both post and get calls to the google api is not efficient.
+* Another thing is the urls should be renamed, in such a way that it does solely what its method action represents or the views should fit the method action.
 
 Most of the part of the review can be seen in the service.py layer that is in the services app.
 
